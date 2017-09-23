@@ -2,6 +2,7 @@
 
 #include <sys/time.h>
 #include <assert.h>
+#include "sdl_image.h"
 
 float *get_regression_values(char **labels, int n)
 {
@@ -1056,8 +1057,12 @@ void demo_classifier(char *datacfg, char *cfgfile, char *weightfile, int cam_ind
     int *indexes = calloc(top, sizeof(int));
 
     if(!cap) error("Couldn't connect to webcam.\n");
+#ifdef SDL2
+    sdlNamedWindow("Classifier", 512,512); 
+#else
     cvNamedWindow("Classifier", CV_WINDOW_NORMAL); 
     cvResizeWindow("Classifier", 512, 512);
+#endif
     float fps = 0;
     int i;
 
@@ -1067,7 +1072,11 @@ void demo_classifier(char *datacfg, char *cfgfile, char *weightfile, int cam_ind
 
         image in = get_image_from_stream(cap);
         image in_s = resize_image(in, net.w, net.h);
+#ifdef SDL2
+        sdlShowImage(in,512,512);
+#else
         show_image(in, "Classifier");
+#endif
 
         float *predictions = network_predict(net, in_s.data);
         if(net.hierarchy) hierarchy_predictions(predictions, net.outputs, net.hierarchy, 1, 1);
@@ -1085,13 +1094,18 @@ void demo_classifier(char *datacfg, char *cfgfile, char *weightfile, int cam_ind
         free_image(in_s);
         free_image(in);
 
+#ifdef SDL2
+        sdlWaitKey();
+#else
         cvWaitKey(10);
+#endif
 
         gettimeofday(&tval_after, NULL);
         timersub(&tval_after, &tval_before, &tval_result);
         float curr = 1000000.f/((long int)tval_result.tv_usec);
         fps = .9*fps + .1*curr;
     }
+    sdlDestroyAllWindows();
 #endif
 }
 
