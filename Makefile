@@ -1,4 +1,4 @@
-export PKG_CONFIG_PATH=/home/kenji/win_shared/cv/opencv/x86_linux_gcc/installed/lib/pkgconfig:/home/kenji/libs/SDL2_x86/lib/pkgconfig:/home/kenji/libs/ffmpeg_x86+x264/lib/pkgconfig
+export PKG_CONFIG_PATH=/home/kenji/win_shared/cv2413/opencv-2.4.13/builda/installed/lib/pkgconfig:/home/kenji/libs/SDL2_x86/lib/pkgconfig:/home/kenji/libs/ffmpeg_x86+x264/lib/pkgconfig
 GPU=0
 CUDNN=0
 OPENCV?=0
