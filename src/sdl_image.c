@@ -53,7 +53,7 @@ void sdlNamedWindow(const char *name, int win_w, int win_h){
     if(!name)
         sprintf(b,"SDL");
     else
-        sprintf(b,name);
+        sprintf(b,"SDL-%s",name);
     if(SDL_Init(SDL_INIT_EVERYTHING)<0) errors("SDLInit\n");
     window  = SDL_CreateWindow(b,SDL_WINDOWPOS_UNDEFINED,SDL_WINDOWPOS_UNDEFINED,win_w,win_h,0);
     renderer= SDL_CreateRenderer(window,-1,0);
