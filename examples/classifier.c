@@ -1029,6 +1029,7 @@ void gun_classifier(char *datacfg, char *cfgfile, char *weightfile, int cam_inde
 #endif
 }
 
+extern IplImage* cvQF_src;
 void demo_classifier(char *datacfg, char *cfgfile, char *weightfile, int cam_index, const char *filename)
 {
 #ifdef OPENCV
@@ -1058,7 +1059,9 @@ void demo_classifier(char *datacfg, char *cfgfile, char *weightfile, int cam_ind
 
     if(!cap) error("Couldn't connect to webcam.\n");
 #ifdef SDL2
-    sdlNamedWindow("Classifier", 512,512); 
+    int cvQF_w = cvGetCaptureProperty(cap,CV_CAP_PROP_FRAME_WIDTH);
+    int cvQF_h = cvGetCaptureProperty(cap,CV_CAP_PROP_FRAME_HEIGHT);
+    sdlNamedWindow("Classifier", cvQF_w, cvQF_h); 
 #else
     cvNamedWindow("Classifier", CV_WINDOW_NORMAL); 
     cvResizeWindow("Classifier", 512, 512);
@@ -1068,29 +1071,41 @@ void demo_classifier(char *datacfg, char *cfgfile, char *weightfile, int cam_ind
 
     while(1){
         struct timeval tval_before, tval_after, tval_result;
+        struct timeval tval_Before, tval_After, tval_Result;
         gettimeofday(&tval_before, NULL);
 
         image in = get_image_from_stream(cap);
         image in_s = resize_image(in, net.w, net.h);
 #ifdef SDL2
+#ifdef CHECK_DIS
         sdlShowImage(in,512,512);
+#else
+        //sdlShowImage(cvQF_src,cvQF_w,cvQF_h);
+        sdlShowImage(cvQF_src,cvQF_w,cvQF_h);
+#endif
 #else
         show_image(in, "Classifier");
 #endif
+        gettimeofday(&tval_Before, NULL);
 
         float *predictions = network_predict(net, in_s.data);
         if(net.hierarchy) hierarchy_predictions(predictions, net.outputs, net.hierarchy, 1, 1);
         top_predictions(net, top, indexes);
 
+        gettimeofday(&tval_After, NULL);
+        timersub(&tval_After, &tval_Before, &tval_Result);
+        long int predict_usec = ((long int)tval_Result.tv_usec);
+
         printf("\033[2J");
         printf("\033[1;1H");
-        printf("\nFPS:%.0f\n",fps);
+        printf("\nFPS:%.0f predict:%ld(usec)\n",fps,predict_usec);
 
         for(i = 0; i < top; ++i){
             int index = indexes[i];
             printf("%.1f%%: %s\n", predictions[index]*100, names[index]);
         }
 
+        gettimeofday(&tval_After, NULL);
         free_image(in_s);
         free_image(in);
 
