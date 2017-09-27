@@ -562,9 +562,11 @@ void flush_stream_buffer(CvCapture *cap, int n)
     }
 }
 
+IplImage* cvQF_src=NULL;
 image get_image_from_stream(CvCapture *cap)
 {
     IplImage* src = cvQueryFrame(cap);
+    cvQF_src = src;
     if (!src) return make_empty_image(0,0,0);
     image im = ipl_to_image(src);
     rgbgr_image(im);
