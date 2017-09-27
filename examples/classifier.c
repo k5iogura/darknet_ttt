@@ -1030,9 +1030,11 @@ void gun_classifier(char *datacfg, char *cfgfile, char *weightfile, int cam_inde
 }
 
 extern IplImage* cvQF_src;
+#include <highgui.h>
 void demo_classifier(char *datacfg, char *cfgfile, char *weightfile, int cam_index, const char *filename)
 {
 #ifdef OPENCV
+    CvFont font;
     printf("Classifier Demo\n");
     network net = parse_network_cfg(cfgfile);
     if(weightfile){
@@ -1062,11 +1064,13 @@ void demo_classifier(char *datacfg, char *cfgfile, char *weightfile, int cam_ind
     int cvQF_w = cvGetCaptureProperty(cap,CV_CAP_PROP_FRAME_WIDTH);
     int cvQF_h = cvGetCaptureProperty(cap,CV_CAP_PROP_FRAME_HEIGHT);
     sdlNamedWindow("Classifier", cvQF_w, cvQF_h); 
+    cvInitFont (&font, CV_FONT_HERSHEY_DUPLEX, 1.0, 1.0, 0, 1, 8);
 #else
     cvNamedWindow("Classifier", CV_WINDOW_NORMAL); 
     cvResizeWindow("Classifier", 512, 512);
 #endif
     float fps = 0;
+    long int predict_usec=999999;
     int i;
 
     while(1){
@@ -1080,7 +1084,9 @@ void demo_classifier(char *datacfg, char *cfgfile, char *weightfile, int cam_ind
 #ifdef CHECK_DIS
         sdlShowImage(in,512,512);
 #else
-        //sdlShowImage(cvQF_src,cvQF_w,cvQF_h);
+        char textb[128];
+        sprintf(textb,"%.2fFPS",1000000.f/predict_usec);
+        cvPutText(cvQF_src,textb,cvPoint(320,240),&font,CV_RGB(255,0,0));
         sdlShowImage(cvQF_src,cvQF_w,cvQF_h);
 #endif
 #else
@@ -1094,7 +1100,7 @@ void demo_classifier(char *datacfg, char *cfgfile, char *weightfile, int cam_ind
 
         gettimeofday(&tval_After, NULL);
         timersub(&tval_After, &tval_Before, &tval_Result);
-        long int predict_usec = ((long int)tval_Result.tv_usec);
+        predict_usec = ((long int)tval_Result.tv_usec);
 
         printf("\033[2J");
         printf("\033[1;1H");
