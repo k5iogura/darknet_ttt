@@ -13,9 +13,10 @@ static errors(const char* s){perror(s);assert(0);exit(-1);}
 static SDL_Window   *window;
 static SDL_Renderer *renderer;
 static SDL_Texture  *texture;
+#ifdef CHECK_DIS
 static Uint32 Pxlfrmt=SDL_PIXELFORMAT_RGBA8888;
 
-// Show Image on Window
+// Show Image on Window by Darknet Image Structure
 int sdlShowImage(image p, unsigned int width, unsigned int height){
     SDL_PixelFormat *frmt = SDL_AllocFormat(Pxlfrmt);
     image copy;
@@ -45,6 +46,42 @@ int sdlShowImage(image p, unsigned int width, unsigned int height){
     if(SDL_RenderCopy(renderer, texture, NULL, NULL)<0) errors("SDL_RenderCopy");
     SDL_RenderPresent(renderer);
 }
+
+#else
+static Uint32 Pxlfrmt=SDL_PIXELFORMAT_BGR24;
+
+// Show Image on Window
+int sdlShowImage(IplImage *p, unsigned int width, unsigned int height){
+    SDL_PixelFormat *frmt = SDL_AllocFormat(Pxlfrmt);
+    image copy;
+    unsigned int r_offset, g_offset, b_offset;
+    int x,y,z;
+    void *pixels = NULL;
+    unsigned int pitch=0;
+    if(SDL_LockTexture(texture,NULL,&pixels,&pitch)<0) errors("SDL_LockTexture" );
+    memcpy(pixels, p->imageData, p->width * p->height * p->nChannels);
+    /*if(p.w != width || p.h != height)
+        copy = resize_image(p,width,height);
+    else
+        copy = copy_image(p);
+    r_offset=0; g_offset=copy.w*copy.h; b_offset=copy.w*copy.h*2;
+    constrain_image(copy);
+    if(copy.c == 3) rgbgr_image(copy);
+    for(y=0;y<copy.h;y++){
+        for(x=0;x<copy.w;x++){
+            unsigned int index=y*copy.h+x;
+            Uint8 d0 = 255.*copy.data[r_offset+index+0];
+            Uint8 d1 = 255.*copy.data[g_offset+index+1];
+            Uint8 d2 = 255.*copy.data[b_offset+index+2];
+            *((Uint32*)pixels+index)=SDL_MapRGB(frmt,d2,d1,d0);
+        }
+    }
+    free_image(copy);*/
+    SDL_UnlockTexture(texture);
+    if(SDL_RenderCopy(renderer, texture, NULL, NULL)<0) errors("SDL_RenderCopy");
+    SDL_RenderPresent(renderer);
+}
+#endif
 
 // Initialize SDL System
 void sdlNamedWindow(const char *name, int win_w, int win_h){
