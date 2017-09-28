@@ -1,9 +1,10 @@
-export PKG_CONFIG_PATH=/home/kenji/win_shared/cv2413/opencv-2.4.13_builda/installed/lib/pkgconfig:/home/kenji/libs/SDL2_armhf/lib/pkgconfig:/home/kenji/libs/ffmpeg_armhf+x264/lib/pkgconfig:/home/kenji/libs/libv4l/usr/lib/arm-linux-gnueabihf/pkgconfig:/home/kenji/libs/x264_armhf/lib/pkgconfig/
+export PKG_CONFIG_PATH=/home/ogura/libs2/opencv-2.4.13_armhf_ffmpeg/lib/pkgconfig:/home/ogura/libs/SDL2_armhf/lib/pkgconfig:/home/ogura/libs/ffmpeg_armhf+x264/lib/pkgconfig:/home/ogura/libs/libv4l/usr/lib/arm-linux-gnueabihf/pkgconfig:/home/ogura/libs/x264_armhf/lib/pkgconfig/
 GPU=0
 CUDNN=0
 OPENCV?=0
 OPENMP=0
 DEBUG?=0
+FPGA?=0
 
 ARCH= -gencode arch=compute_20,code=[sm_20,sm_21] \
       -gencode arch=compute_30,code=sm_30 \
@@ -27,7 +28,7 @@ ARFLAGS=rcs
 OPTS=-Ofast
 LDFLAGS= -lm -pthread 
 COMMON= -Iinclude/ -Isrc/
-CFLAGS=-Wall -Wno-unknown-pragmas -Wfatal-errors -fPIC
+CFLAGS=-Wall -Wno-unknown-pragmas -Wfatal-errors -Wno-format -fPIC
 
 ifeq ($(OPENMP), 1) 
 CFLAGS+= -fopenmp
@@ -65,7 +66,15 @@ LDFLAGS+= `pkg-config --libs libv4l2`
 COMMON+= `pkg-config --cflags libv4l2` 
 LDFLAGS+= `pkg-config --libs libv4lconvert` 
 COMMON+= `pkg-config --cflags libv4lconvert` 
-LDFLAGS+= -L/home/kenji/libs/libv4l/usr/lib/arm-linux-gnueabihf/ -ljpeg
+LDFLAGS+= -L/home/ogura/libs/libv4l/usr/lib/arm-linux-gnueabihf/ -ljpeg
+endif
+
+ifeq ($(FPGA),1)
+ALTERAOCLSDKROOT    =/home/ogura/altera/15.1/hdl
+AOCL_COMPILE_CONFIG =-I/home/ogura/altera/15.1/hld/host/include
+AOCL_LINK_CONFIG    =-L/home/ogura/altera/15.1/hld/board/terasic/de1soc/arm32/lib -L/home/ogura/altera/15.1/hld/host/arm32/lib -Wl,--no-as-needed -lalteracl  -lalterahalmmd -lalterammdpcie -lelf -lrt -ldl
+CFLAGS+= -DFPGA $(AOCL_COMPILE_CONFIG)
+LDFLAGS+=$(AOCL_LINK_CONFIG)
 endif
 
 ifeq ($(GPU), 1) 
@@ -80,7 +89,7 @@ CFLAGS+= -DCUDNN
 LDFLAGS+= -lcudnn
 endif
 
-OBJ=gemm.o utils.o cuda.o deconvolutional_layer.o convolutional_layer.o list.o image.o activations.o im2col.o col2im.o blas.o crop_layer.o dropout_layer.o maxpool_layer.o softmax_layer.o data.o matrix.o network.o connected_layer.o cost_layer.o parser.o option_list.o detection_layer.o route_layer.o box.o normalization_layer.o avgpool_layer.o layer.o local_layer.o shortcut_layer.o activation_layer.o rnn_layer.o gru_layer.o crnn_layer.o demo.o batchnorm_layer.o region_layer.o reorg_layer.o tree.o  lstm_layer.o sdl_image.o
+OBJ=gemm.o utils.o cuda.o deconvolutional_layer.o convolutional_layer.o list.o image.o activations.o im2col.o col2im.o blas.o crop_layer.o dropout_layer.o maxpool_layer.o softmax_layer.o data.o matrix.o network.o connected_layer.o cost_layer.o parser.o option_list.o detection_layer.o route_layer.o box.o normalization_layer.o avgpool_layer.o layer.o local_layer.o shortcut_layer.o activation_layer.o rnn_layer.o gru_layer.o crnn_layer.o demo.o batchnorm_layer.o region_layer.o reorg_layer.o tree.o  lstm_layer.o sdl_image.o gemm_fpga.o
 EXECOBJA=captcha.o lsd.o super.o voxel.o art.o tag.o cifar.o go.o rnn.o rnn_vid.o compare.o segmenter.o regressor.o classifier.o coco.o dice.o yolo.o detector.o  writing.o nightmare.o swag.o darknet.o 
 ifeq ($(GPU), 1) 
 LDFLAGS+= -lstdc++ 
