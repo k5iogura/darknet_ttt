@@ -1,4 +1,5 @@
 #include "gemm.h"
+#include "gemm_fpga.h"
 #include "utils.h"
 #include "cuda.h"
 #include <stdlib.h>
@@ -142,6 +143,7 @@ void gemm_tt(int M, int N, int K, float ALPHA,
 }
 
 
+static int FPGA_init=0;
 void gemm_cpu(int TA, int TB, int M, int N, int K, float ALPHA, 
         float *A, int lda, 
         float *B, int ldb,
@@ -155,9 +157,14 @@ void gemm_cpu(int TA, int TB, int M, int N, int K, float ALPHA,
             C[i*ldc + j] *= BETA;
         }
     }
-    if(!TA && !TB)
+    if(!TA && !TB){
+#ifdef FPGA
+        if(!FPGA_init){FPGA_init=1;gemm_fpga_init();}
+        gemm_nn_fpga(M, N, K, ALPHA, A, lda, B, ldb, C, ldc);
+#else
         gemm_nn(M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
-    else if(TA && !TB)
+#endif
+    }else if(TA && !TB)
         gemm_tn(M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
     else if(!TA && TB)
         gemm_nt(M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
