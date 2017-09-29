@@ -60,26 +60,31 @@ int sdlShowImage(IplImage *p, unsigned int width, unsigned int height){
     unsigned int pitch=0;
     if(SDL_LockTexture(texture,NULL,&pixels,&pitch)<0) errors("SDL_LockTexture" );
     memcpy(pixels, p->imageData, p->width * p->height * p->nChannels);
-    /*if(p.w != width || p.h != height)
-        copy = resize_image(p,width,height);
-    else
-        copy = copy_image(p);
-    r_offset=0; g_offset=copy.w*copy.h; b_offset=copy.w*copy.h*2;
-    constrain_image(copy);
-    if(copy.c == 3) rgbgr_image(copy);
-    for(y=0;y<copy.h;y++){
-        for(x=0;x<copy.w;x++){
-            unsigned int index=y*copy.h+x;
-            Uint8 d0 = 255.*copy.data[r_offset+index+0];
-            Uint8 d1 = 255.*copy.data[g_offset+index+1];
-            Uint8 d2 = 255.*copy.data[b_offset+index+2];
-            *((Uint32*)pixels+index)=SDL_MapRGB(frmt,d2,d1,d0);
-        }
-    }
-    free_image(copy);*/
     SDL_UnlockTexture(texture);
     if(SDL_RenderCopy(renderer, texture, NULL, NULL)<0) errors("SDL_RenderCopy");
     SDL_RenderPresent(renderer);
+    return 0;
+}
+
+typedef struct {
+    IplImage *image;
+    int w;
+    int h;
+} sdlShowImageThreadIFtype;
+void sdlShowImageThreadIF(void* args){
+    sdlShowImageThreadIFtype *in=(sdlShowImageThreadIFtype*)args;
+    sdlShowImage(in->image, in->w, in->h);
+}
+pthread_t sdlShowImageNewThread(IplImage *clone, unsigned int width, unsigned int height){
+    pthread_t thread_id;
+    sdlShowImageThreadIFtype args={clone,width,height};
+    if(pthread_create(&thread_id,0,(void*)sdlShowImageThreadIF,&args)) error("faild threading\n");
+    return thread_id;
+}
+void sdlShowImageJoinThread(pthread_t thread_id){
+    void *ret;
+    if(thread_id<0) return;
+    pthread_join(thread_id, &ret);
 }
 #endif
 
