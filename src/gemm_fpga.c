@@ -32,7 +32,7 @@ int gemm_fpga_init () {
   cl_int ret1,ret2,ret3;
 
   FILE *fp;
-  char fileName[] = "./gemm1.cl";
+  char fileName[] = "./gemm1.aocx";
   const unsigned char *source_str;
   size_t source_size;
 
