@@ -1072,6 +1072,9 @@ void demo_classifier(char *datacfg, char *cfgfile, char *weightfile, int cam_ind
     float fps = 0;
     long int predict_usec=999999;
     int i;
+    pthread_t thread_id=-1;
+    void * pthread_ret;
+    IplImage *cloneImage;
 
     while(1){
         struct timeval tval_before, tval_after, tval_result;
@@ -1087,6 +1090,12 @@ void demo_classifier(char *datacfg, char *cfgfile, char *weightfile, int cam_ind
         char textb[128];
         sprintf(textb,"%.2fFPS",1000000.f/predict_usec);
         cvPutText(cvQF_src,textb,cvPoint(320,240),&font,CV_RGB(255,0,0));
+        /*if(thread_id!=-1) {
+            pthread_join(thread_id, &pthread_ret);
+            cvReleaseImage(&cloneImage);
+        }
+        cloneImage = cvCloneImage(cvQF_src);
+        thread_id = sdlShowImageNewThread(cloneImage,cvQF_w,cvQF_h);*/
         sdlShowImage(cvQF_src,cvQF_w,cvQF_h);
 #endif
 #else
