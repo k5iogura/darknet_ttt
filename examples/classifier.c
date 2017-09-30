@@ -1034,6 +1034,8 @@ void gun_classifier(char *datacfg, char *cfgfile, char *weightfile, int cam_inde
 #endif
 }
 
+#define MOMENTUM_SEC 2
+#define MOMENTUM_PER 50.
 void demo_classifier(char *datacfg, char *cfgfile, char *weightfile, int cam_index, const char *filename)
 {
 #ifdef OPENCV
@@ -1083,7 +1085,6 @@ void demo_classifier(char *datacfg, char *cfgfile, char *weightfile, int cam_ind
     while(1){
         struct timeval tval_before, tval_after, tval_result;
         struct timeval tval_Before, tval_After, tval_Result;
-        int key = 0;
         gettimeofday(&tval_before, NULL);
 
         image in = get_image_from_stream(cap);
@@ -1095,6 +1096,8 @@ void demo_classifier(char *datacfg, char *cfgfile, char *weightfile, int cam_ind
         char textb[128];
         sprintf(textb,"%7.2fFPS",1000000.f/predict_usec);
         cvPutText(cvQF_src,textb,cvPoint(320,240),&font,CV_RGB(255,0,0));
+        if(!momentum)
+            cvThreshold(cvQF_src,cvQF_src,50,120,CV_THRESH_TRUNC);
         sdlShowImage(cvQF_src,cvQF_w,cvQF_h);
 #endif
 #else
@@ -1118,8 +1121,8 @@ void demo_classifier(char *datacfg, char *cfgfile, char *weightfile, int cam_ind
             int index = indexes[i];
             printf("%.1f%%: %s\n", predictions[index]*100, names[index]);
         }
-        if(predictions[0]*100>50. && !strcmp(names[0],"person"))
-            momentum=30;
+        if(predictions[1]*100>MOMENTUM_PER)
+            momentum=(int)fps*MOMENTUM_SEC;
         else
             if(momentum>0) momentum--;
 
@@ -1128,10 +1131,9 @@ void demo_classifier(char *datacfg, char *cfgfile, char *weightfile, int cam_ind
         free_image(in);
 
 #ifdef SDL2
-        key = sdlWaitKey();
-        if(key!=0) break;
+        if(sdlWaitKey()) break;
 #else
-        cvWaitKey(10);
+        if(cvWaitKey(10)==27) break;
 #endif
 
         gettimeofday(&tval_after, NULL);
