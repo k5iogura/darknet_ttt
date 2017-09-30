@@ -1064,7 +1064,6 @@ void demo_classifier(char *datacfg, char *cfgfile, char *weightfile, int cam_ind
 
     if(!cap) error("Couldn't connect to webcam.\n");
 #ifdef SDL2
-    //get_image_from_stream(cap);
     int cvQF_w = cvGetCaptureProperty(cap,CV_CAP_PROP_FRAME_WIDTH);
     int cvQF_h = cvGetCaptureProperty(cap,CV_CAP_PROP_FRAME_HEIGHT);
     sdlNamedWindow("Classifier", cvQF_w, cvQF_h); 
