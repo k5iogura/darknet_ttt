@@ -102,8 +102,9 @@ static int rendererThread(void *args){
     while(1){
         SDL_LockMutex(sdlQF_mutex);
         if(thQF_src!=NULL) cvReleaseImage(&thQF_src);
-        thQF_src = cvCloneImage(intmQF_src);
+        if(intmQF_src) thQF_src = cvCloneImage(intmQF_src);
         SDL_UnlockMutex(sdlQF_mutex);
+        if(!intmQF_src) continue;
         if(SDL_LockTexture(texture,NULL,&pixels,&pitch)<0) errors("SDL_LockTexture" );
         memcpy(
           pixels,thQF_src->imageData,
