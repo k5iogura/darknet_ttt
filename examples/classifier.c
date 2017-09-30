@@ -1034,7 +1034,7 @@ void gun_classifier(char *datacfg, char *cfgfile, char *weightfile, int cam_inde
 #endif
 }
 
-#define MOMENTUM_SEC 2
+#define MOMENTUM_SEC 1.3
 #define MOMENTUM_PER 50.
 void demo_classifier(char *datacfg, char *cfgfile, char *weightfile, int cam_index, const char *filename)
 {
@@ -1121,9 +1121,10 @@ void demo_classifier(char *datacfg, char *cfgfile, char *weightfile, int cam_ind
             int index = indexes[i];
             printf("%.1f%%: %s\n", predictions[index]*100, names[index]);
         }
-        if(predictions[1]*100>MOMENTUM_PER)
-            momentum=(int)fps*MOMENTUM_SEC;
-        else
+        if(predictions[1]*100>MOMENTUM_PER){
+            if(momentum<(int)fps*MOMENTUM_SEC)
+                momentum+=5;
+        }else
             if(momentum>0) momentum--;
 
         gettimeofday(&tval_After, NULL);
