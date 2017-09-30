@@ -1078,6 +1078,7 @@ void demo_classifier(char *datacfg, char *cfgfile, char *weightfile, int cam_ind
     pthread_t thread_id=-1;
     void * pthread_ret;
     IplImage *cloneImage;
+    int momentum = 0;
 
     while(1){
         struct timeval tval_before, tval_after, tval_result;
@@ -1111,12 +1112,16 @@ void demo_classifier(char *datacfg, char *cfgfile, char *weightfile, int cam_ind
 
         printf("\033[2J");
         printf("\033[1;1H");
-        printf("\nFPS:%.0f predict:%ld(usec)\n",fps,predict_usec);
+        printf("\nFPS:%.0f mo:%d predict:%ld(usec)\n",fps,momentum,predict_usec);
 
         for(i = 0; i < top; ++i){
             int index = indexes[i];
             printf("%.1f%%: %s\n", predictions[index]*100, names[index]);
         }
+        if(predictions[0]*100>50. && !strcmp(names[0],"person"))
+            momentum=30;
+        else
+            if(momentum>0) momentum--;
 
         gettimeofday(&tval_After, NULL);
         free_image(in_s);
