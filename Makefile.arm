@@ -67,7 +67,7 @@ COMMON+= `pkg-config --cflags libv4l2`
 LDFLAGS+= `pkg-config --libs libv4lconvert` 
 COMMON+= `pkg-config --cflags libv4lconvert` 
 LDFLAGS+= -L/home/ogura/libs/libv4l/usr/lib/arm-linux-gnueabihf/ -ljpeg
-OGJ+=sdl_image.o
+OBJ+=sdl_image.o
 endif
 
 ifeq ($(FPGA),1)
@@ -76,7 +76,7 @@ AOCL_COMPILE_CONFIG =-I/home/ogura/altera/15.1/hld/host/include
 AOCL_LINK_CONFIG    =-L/home/ogura/altera/15.1/hld/board/terasic/de1soc/arm32/lib -L/home/ogura/altera/15.1/hld/host/arm32/lib -Wl,--no-as-needed -lalteracl  -lalterahalmmd -lalterammdpcie -lelf -lrt -ldl
 CFLAGS+= -DFPGA $(AOCL_COMPILE_CONFIG)
 LDFLAGS+=$(AOCL_LINK_CONFIG)
-OGJ+=gemm_fpga.o
+OBJ+=gemm_fpga.o
 endif
 
 ifeq ($(GPU), 1) 
