@@ -2,7 +2,12 @@
 
 #include <sys/time.h>
 #include <assert.h>
+
+#ifdef OPENCV
 #include "sdl_image.h"
+#include <highgui.h>
+extern IplImage* cvQF_src;
+#endif
 
 float *get_regression_values(char **labels, int n)
 {
@@ -1029,8 +1034,6 @@ void gun_classifier(char *datacfg, char *cfgfile, char *weightfile, int cam_inde
 #endif
 }
 
-extern IplImage* cvQF_src;
-#include <highgui.h>
 void demo_classifier(char *datacfg, char *cfgfile, char *weightfile, int cam_index, const char *filename)
 {
 #ifdef OPENCV
