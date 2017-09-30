@@ -8,6 +8,7 @@
 *.pyc
 *.so
 *.a
+tags
 old/
 mnist/
 data/
