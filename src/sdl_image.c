@@ -89,6 +89,8 @@ static int rendererThread(void *args){
     unsigned int pitch=0;
     int win_w=p->win_w, win_h=p->win_h;
     int tex_w, tex_h;
+    int quit_flag=0;
+    SDL_Event event;
     SDL_LockMutex(sdlQF_mutex);
     SDL_UnlockMutex(sdlQF_mutex);
     renderer= SDL_CreateRenderer(window,-1,0);
@@ -110,11 +112,20 @@ static int rendererThread(void *args){
         SDL_UnlockTexture(texture);
         if(SDL_RenderCopy(renderer, texture, NULL, NULL)<0) errors("SDL_RenderCopy");
         SDL_RenderPresent(renderer);
+        while(SDL_PollEvent(&event) == 1){
+            switch(event.type){
+            case SDL_KEYDOWN:
+                quit_flag=1;
+                event.type=SDL_KEYDOWN;
+                SDL_PushEvent(&event);
+                break;
+            case SDL_QUIT: quit_flag=1; break;
+            default:;
+            }
+        }
+        if(quit_flag) break;
     }
     SDL_DestroyRenderer(renderer);
-    SDL_Event event;
-    event.type=SDL_QUIT;
-    SDL_PushEvent(&event);
     return 0;
 }
 // Initialize SDL System
@@ -151,6 +162,7 @@ int sdlWaitKey(){
     while(SDL_PollEvent(&event) == 1){
         switch(event.type){
         case SDL_QUIT: quit_flag=1; break;
+        case SDL_KEYDOWN: quit_flag=1; break;
         default: break;
         }
     }
@@ -159,8 +171,16 @@ int sdlWaitKey(){
 
 // Close SDL System
 void sdlDestroyAllWindows(){
+#ifdef SINGLE_THREAD_SDL
     SDL_DestroyTexture(texture);
     SDL_DestroyRenderer(renderer);
+#else
+    int status;
+    SDL_Event event;
+    event.type=SDL_QUIT;
+    SDL_PushEvent(&event);
+    SDL_WaitThread(th_id,&status);
+#endif
     SDL_DestroyWindow(window);
     SDL_Quit();
 }

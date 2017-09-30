@@ -1083,6 +1083,7 @@ void demo_classifier(char *datacfg, char *cfgfile, char *weightfile, int cam_ind
     while(1){
         struct timeval tval_before, tval_after, tval_result;
         struct timeval tval_Before, tval_After, tval_Result;
+        int key = 0;
         gettimeofday(&tval_before, NULL);
 
         image in = get_image_from_stream(cap);
@@ -1094,12 +1095,6 @@ void demo_classifier(char *datacfg, char *cfgfile, char *weightfile, int cam_ind
         char textb[128];
         sprintf(textb,"%7.2fFPS",1000000.f/predict_usec);
         cvPutText(cvQF_src,textb,cvPoint(320,240),&font,CV_RGB(255,0,0));
-        /*if(thread_id!=-1) {
-            pthread_join(thread_id, &pthread_ret);
-            cvReleaseImage(&cloneImage);
-        }
-        cloneImage = cvCloneImage(cvQF_src);
-        thread_id = sdlShowImageNewThread(cloneImage,cvQF_w,cvQF_h);*/
         sdlShowImage(cvQF_src,cvQF_w,cvQF_h);
 #endif
 #else
@@ -1129,7 +1124,8 @@ void demo_classifier(char *datacfg, char *cfgfile, char *weightfile, int cam_ind
         free_image(in);
 
 #ifdef SDL2
-        sdlWaitKey();
+        key = sdlWaitKey();
+        if(key!=0) break;
 #else
         cvWaitKey(10);
 #endif
@@ -1139,7 +1135,11 @@ void demo_classifier(char *datacfg, char *cfgfile, char *weightfile, int cam_ind
         float curr = 1000000.f/((long int)tval_result.tv_usec);
         fps = .9*fps + .1*curr;
     }
+#ifdef SDL2
     sdlDestroyAllWindows();
+#else
+    cvDestoryAllWindows();
+#endif
 #endif
 }
 
