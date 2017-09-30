@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <unistd.h>
 #include <assert.h>
 #include <SDL.h>
 #include <darknet.h>
@@ -49,61 +50,98 @@ int sdlShowImage(image p, unsigned int width, unsigned int height){
 
 #else
 static Uint32 Pxlfrmt=SDL_PIXELFORMAT_BGR24;
+static SDL_mutex *sdlQF_mutex;
+static SDL_Thread *th_id;
+typedef struct {
+    int win_w;
+    int win_h;
+} rendererThreadIFtype;
+extern IplImage *cvQF_src;
+static IplImage *intmQF_src=NULL;
 
 // Show Image on Window
 int sdlShowImage(IplImage *p, unsigned int width, unsigned int height){
     SDL_PixelFormat *frmt = SDL_AllocFormat(Pxlfrmt);
     image copy;
-    unsigned int r_offset, g_offset, b_offset;
-    int x,y,z;
     void *pixels = NULL;
     unsigned int pitch=0;
+#ifdef SINGLE_THREAD_SDL
     if(SDL_LockTexture(texture,NULL,&pixels,&pitch)<0) errors("SDL_LockTexture" );
     memcpy(pixels, p->imageData, p->width * p->height * p->nChannels);
     SDL_UnlockTexture(texture);
     if(SDL_RenderCopy(renderer, texture, NULL, NULL)<0) errors("SDL_RenderCopy");
     SDL_RenderPresent(renderer);
+#else
+    SDL_LockMutex(sdlQF_mutex);
+    if(intmQF_src!=NULL) cvReleaseImage(&intmQF_src);
+    intmQF_src = cvCloneImage(cvQF_src);
+    SDL_UnlockMutex(sdlQF_mutex);
+#endif
     return 0;
-}
-
-typedef struct {
-    IplImage *image;
-    int w;
-    int h;
-} sdlShowImageThreadIFtype;
-void sdlShowImageThreadIF(void* args){
-    sdlShowImageThreadIFtype *in=(sdlShowImageThreadIFtype*)args;
-    sdlShowImage(in->image, in->w, in->h);
-}
-pthread_t sdlShowImageNewThread(IplImage *clone, unsigned int width, unsigned int height){
-    pthread_t thread_id;
-    sdlShowImageThreadIFtype args={clone,width,height};
-    if(pthread_create(&thread_id,0,(void*)sdlShowImageThreadIF,&args)) error("faild threading\n");
-    return thread_id;
-}
-void sdlShowImageJoinThread(pthread_t thread_id){
-    void *ret;
-    if(thread_id<0) return;
-    pthread_join(thread_id, &ret);
 }
 #endif
 
-// Initialize SDL System
-void sdlNamedWindow(const char *name, int win_w, int win_h){
+// renderer thread
+static int rendererThread(void *args){
+    IplImage *thQF_src=NULL;
+    rendererThreadIFtype *p=args;
+    void *pixels = NULL;
+    unsigned int pitch=0;
+    int win_w=p->win_w, win_h=p->win_h;
     int tex_w, tex_h;
-    char b[128];
-    if(!name)
-        sprintf(b,"SDL");
-    else
-        sprintf(b,"SDL-%s",name);
-    if(SDL_Init(SDL_INIT_EVERYTHING)<0) errors("SDLInit\n");
-    window  = SDL_CreateWindow(b,SDL_WINDOWPOS_UNDEFINED,SDL_WINDOWPOS_UNDEFINED,win_w,win_h,0);
+    SDL_LockMutex(sdlQF_mutex);
+    SDL_UnlockMutex(sdlQF_mutex);
     renderer= SDL_CreateRenderer(window,-1,0);
     texture = SDL_CreateTexture(renderer,Pxlfrmt,SDL_TEXTUREACCESS_STREAMING, win_w, win_h);
     if(SDL_QueryTexture(texture,NULL,NULL,&tex_w,&tex_h)<0) errors("SDL_QueryTexture");
     if(win_w!=tex_w|| win_h!=tex_h) errors("SDL_CreateTexture incompleted\n");
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
     SDL_RenderClear(renderer);
+    while(1){
+        SDL_LockMutex(sdlQF_mutex);
+        if(thQF_src!=NULL) cvReleaseImage(&thQF_src);
+        thQF_src = cvCloneImage(intmQF_src);
+        SDL_UnlockMutex(sdlQF_mutex);
+        if(SDL_LockTexture(texture,NULL,&pixels,&pitch)<0) errors("SDL_LockTexture" );
+        memcpy(
+          pixels,thQF_src->imageData,
+          thQF_src->width*thQF_src->height*thQF_src->nChannels
+        );
+        SDL_UnlockTexture(texture);
+        if(SDL_RenderCopy(renderer, texture, NULL, NULL)<0) errors("SDL_RenderCopy");
+        SDL_RenderPresent(renderer);
+    }
+    SDL_DestroyRenderer(renderer);
+    SDL_Event event;
+    event.type=SDL_QUIT;
+    SDL_PushEvent(&event);
+    return 0;
+}
+// Initialize SDL System
+void sdlNamedWindow(const char *name, int win_w, int win_h){
+    int tex_w, tex_h;
+    char b[128];
+    rendererThreadIFtype args={win_w,win_h};
+    if(!name)
+        sprintf(b,"SDL");
+    else
+        sprintf(b,"SDL-%s",name);
+    if(SDL_Init(SDL_INIT_EVERYTHING)<0) errors("SDLInit\n");
+    window  = SDL_CreateWindow(b,SDL_WINDOWPOS_UNDEFINED,SDL_WINDOWPOS_UNDEFINED,win_w,win_h,0);
+#ifdef SINGLE_THREAD_SDL
+    renderer= SDL_CreateRenderer(window,-1,0);
+    texture = SDL_CreateTexture(renderer,Pxlfrmt,SDL_TEXTUREACCESS_STREAMING, win_w, win_h);
+    if(SDL_QueryTexture(texture,NULL,NULL,&tex_w,&tex_h)<0) errors("SDL_QueryTexture");
+    if(win_w!=tex_w|| win_h!=tex_h) errors("SDL_CreateTexture incompleted\n");
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
+    SDL_RenderClear(renderer);
+#else
+    sdlQF_mutex = SDL_CreateMutex();
+    SDL_LockMutex(sdlQF_mutex);
+    th_id = SDL_CreateThread(rendererThread,"rendererThread",&args);
+    sleep(1); //bug-fix:SDL_QueryTexture: Resource temporarily unavailable
+    SDL_UnlockMutex(sdlQF_mutex);
+#endif
 }
 
 // Poll Event

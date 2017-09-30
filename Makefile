@@ -41,6 +41,7 @@ CFLAGS+=$(OPTS)
 
 ifeq ($(OPENCV), 1) 
 COMMON+= -DOPENCV
+#CFLAGS+= -DOPENCV -DSDL2 -DSINGLE_THREAD_SDL
 CFLAGS+= -DOPENCV -DSDL2
 COMMON+= -Wno-unused-function -Wno-unused-result -Wno-unused-variable
 COMMON+= -Wno-return-type -Wno-format-security -Wno-pointer-sign

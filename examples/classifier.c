@@ -701,7 +701,7 @@ void predict_classifier(char *datacfg, char *cfgfile, char *weightfile, char *fi
             int index = indexes[i];
             //if(net.hierarchy) printf("%d, %s: %f, parent: %s \n",index, names[index], predictions[index], (net.hierarchy->parent[index] >= 0) ? names[net.hierarchy->parent[index]] : "Root");
             //else printf("%s: %f\n",names[index], predictions[index]);
-            printf("%5.2f%%: %s\n", predictions[index]*100, names[index]);
+            printf("%.2f%%: %s\n", predictions[index]*100, names[index]);
         }
         if(r.data != im.data) free_image(r);
         free_image(im);
@@ -1064,6 +1064,7 @@ void demo_classifier(char *datacfg, char *cfgfile, char *weightfile, int cam_ind
 
     if(!cap) error("Couldn't connect to webcam.\n");
 #ifdef SDL2
+    get_image_from_stream(cap);
     int cvQF_w = cvGetCaptureProperty(cap,CV_CAP_PROP_FRAME_WIDTH);
     int cvQF_h = cvGetCaptureProperty(cap,CV_CAP_PROP_FRAME_HEIGHT);
     sdlNamedWindow("Classifier", cvQF_w, cvQF_h); 
@@ -1091,7 +1092,7 @@ void demo_classifier(char *datacfg, char *cfgfile, char *weightfile, int cam_ind
         sdlShowImage(in,512,512);
 #else
         char textb[128];
-        sprintf(textb,"%.2fFPS",1000000.f/predict_usec);
+        sprintf(textb,"%7.2fFPS",1000000.f/predict_usec);
         cvPutText(cvQF_src,textb,cvPoint(320,240),&font,CV_RGB(255,0,0));
         /*if(thread_id!=-1) {
             pthread_join(thread_id, &pthread_ret);
