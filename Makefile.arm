@@ -1,4 +1,4 @@
-export PKG_CONFIG_PATH=/home/ogura/libs2/opencv-2.4.13_armhf_ffmpeg/lib/pkgconfig:/home/ogura/libs/SDL2_armhf/lib/pkgconfig:/home/ogura/libs/ffmpeg_armhf+x264/lib/pkgconfig:/home/ogura/libs/libv4l/usr/lib/arm-linux-gnueabihf/pkgconfig:/home/ogura/libs/x264_armhf/lib/pkgconfig/
+export PKG_CONFIG_PATH=/home/kenji/libs2/opencv-2.4.13_armhf_ffmpeg/lib/pkgconfig:/home/kenji/libs/SDL2_armhf/lib/pkgconfig:/home/kenji/libs/ffmpeg_armhf+x264/lib/pkgconfig:/home/kenji/libs/libv4l/usr/lib/arm-linux-gnueabihf/pkgconfig:/home/kenji/libs/x264_armhf/lib/pkgconfig/
 GPU=0
 CUDNN=0
 OPENCV?=0
