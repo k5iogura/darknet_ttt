@@ -1035,7 +1035,7 @@ void gun_classifier(char *datacfg, char *cfgfile, char *weightfile, int cam_inde
 }
 
 #define MOMENTUM_SEC 1.3
-#define MOMENTUM_PER 50.
+#define MOMENTUM_PER 40.
 void demo_classifier(char *datacfg, char *cfgfile, char *weightfile, int cam_index, const char *filename)
 {
 #ifdef OPENCV
@@ -1080,7 +1080,8 @@ void demo_classifier(char *datacfg, char *cfgfile, char *weightfile, int cam_ind
     pthread_t thread_id=-1;
     void * pthread_ret;
     IplImage *cloneImage;
-    int momentum = 0;
+    int momentum = 0, clear_image=0;
+    float *predictions=NULL;
 
     while(1){
         struct timeval tval_before, tval_after, tval_result;
@@ -1093,11 +1094,15 @@ void demo_classifier(char *datacfg, char *cfgfile, char *weightfile, int cam_ind
 #ifdef CHECK_DIS
         sdlShowImage(in,512,512);
 #else
+        if(!clear_image)
+            cvThreshold(cvQF_src,cvQF_src,60,120,CV_THRESH_TRUNC);
         char textb[128];
         sprintf(textb,"%7.2fFPS",1000000.f/predict_usec);
-        cvPutText(cvQF_src,textb,cvPoint(320,240),&font,CV_RGB(255,0,0));
-        if(!momentum)
-            cvThreshold(cvQF_src,cvQF_src,50,120,CV_THRESH_TRUNC);
+        cvPutText(cvQF_src,textb,cvPoint(cvQF_w/2,cvQF_h/2),&font,CV_RGB(255,0,0));
+        if(predictions){
+            sprintf(textb,"%7.2f%%:person",100.f*predictions[1]);
+            cvPutText(cvQF_src,textb,cvPoint(cvQF_w/2,cvQF_h/2+50),&font,CV_RGB(255,0,0));
+        }
         sdlShowImage(cvQF_src,cvQF_w,cvQF_h);
 #endif
 #else
@@ -1105,7 +1110,7 @@ void demo_classifier(char *datacfg, char *cfgfile, char *weightfile, int cam_ind
 #endif
         gettimeofday(&tval_Before, NULL);
 
-        float *predictions = network_predict(net, in_s.data);
+        predictions = network_predict(net, in_s.data);
         if(net.hierarchy) hierarchy_predictions(predictions, net.outputs, net.hierarchy, 1, 1);
         top_predictions(net, top, indexes);
 
@@ -1123,9 +1128,11 @@ void demo_classifier(char *datacfg, char *cfgfile, char *weightfile, int cam_ind
         }
         if(predictions[1]*100>MOMENTUM_PER){
             if(momentum<(int)fps*MOMENTUM_SEC)
-                momentum+=5;
+                momentum+=3;
         }else
             if(momentum>0) momentum--;
+        if(momentum>(int)fps*MOMENTUM_SEC*0.7) clear_image=1;
+        if(momentum<(int)fps*MOMENTUM_SEC*0.2) clear_image=0;
 
         gettimeofday(&tval_After, NULL);
         free_image(in_s);
