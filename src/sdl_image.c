@@ -101,10 +101,10 @@ static int rendererThread(void *args){
     SDL_RenderClear(renderer);
     while(1){
         SDL_LockMutex(sdlQF_mutex);
-        if(thQF_src!=NULL) cvReleaseImage(&thQF_src);
+        if(thQF_src) cvReleaseImage(&thQF_src);
         if(intmQF_src) thQF_src = cvCloneImage(intmQF_src);
         SDL_UnlockMutex(sdlQF_mutex);
-        if(!intmQF_src) continue;
+        if(!intmQF_src || !thQF_src) continue;
         if(SDL_LockTexture(texture,NULL,&pixels,&pitch)<0) errors("SDL_LockTexture" );
         memcpy(
           pixels,thQF_src->imageData,
@@ -130,6 +130,8 @@ static int rendererThread(void *args){
     return 0;
 }
 // Initialize SDL System
+#define LCD_W 320
+#define LCD_H 240
 void sdlNamedWindow(const char *name, int win_w, int win_h){
     int tex_w, tex_h;
     char b[128];
@@ -139,7 +141,7 @@ void sdlNamedWindow(const char *name, int win_w, int win_h){
     else
         sprintf(b,"SDL-%s",name);
     if(SDL_Init(SDL_INIT_EVERYTHING)<0) errors("SDLInit\n");
-    window  = SDL_CreateWindow(b,SDL_WINDOWPOS_UNDEFINED,SDL_WINDOWPOS_UNDEFINED,win_w,win_h,0);
+    window  = SDL_CreateWindow(b,SDL_WINDOWPOS_UNDEFINED,SDL_WINDOWPOS_UNDEFINED,LCD_W,LCD_H,SDL_WINDOW_FULLSCREEN);
 #ifdef SINGLE_THREAD_SDL
     renderer= SDL_CreateRenderer(window,-1,0);
     texture = SDL_CreateTexture(renderer,Pxlfrmt,SDL_TEXTUREACCESS_STREAMING, win_w, win_h);
