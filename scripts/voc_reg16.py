@@ -33,9 +33,12 @@ NN_IN_SIZE=32
 MIN_PATCH=128
 
 DEBUG=True
+DEBUG=False
 def convert_annotation(year, image_id):
     in_file = open('VOCdevkit/VOC%s/Annotations/%s.xml'%(year, image_id))
     out_file = open('VOCdevkit/VOC%s/labels/%s.txt'%(year, image_id), 'w')
+    print('VOCdevkit/VOC%s/labels/%s.txt'%(year, image_id))
+#    if image_id == '000374':sys.exit(1)
     if DEBUG:img = cv2.imread('VOCdevkit/VOC%s/JPEGImages/%s.jpg'%(year, image_id))
     tree=ET.parse(in_file)
     root = tree.getroot()
@@ -64,17 +67,19 @@ def convert_annotation(year, image_id):
                 for i in range(xp,xq+1):
                     Gtruth[i][j]=1.
                     if DEBUG:sys.stdout.write("%2d-"%(j*DIVISIONS+i))
-            if DEBUG:print("")
         if DEBUG:cv2.rectangle(img,(B[0],B[2]),(B[1],B[3]),(255,0,255),8)
-        #print((B[0],B[2]),(B[1],B[3]))
-    out_file.write("14 "+str(Gtruth)+"\n")
     #out_file.write(str(cls_id) + " " + " ".join([str(a) for a in bb]) + '\n')
+	for j in range(0,DIVISIONS):
+		for i in range(0,DIVISIONS):
+			out_file.write(str("%2d "%(Gtruth[i][j])))
+	out_file.write("\n")
     if DEBUG:img = cv2.resize(img,(32,32))
     if DEBUG:img = cv2.resize(img,(w,h))
     if DEBUG:cv2.imshow('%s'%(image_id),img)
-    while(1):
-        if cv2.waitKey(100) == 27: break
-    cv2.destroyAllWindows()
+    if DEBUG:
+        while(1):
+            if cv2.waitKey(100) == 27: break
+    if DEBUG:cv2.destroyAllWindows()
     in_file.close()
     out_file.close()
 
