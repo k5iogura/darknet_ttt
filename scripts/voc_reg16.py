@@ -4,6 +4,8 @@ import os
 from os import listdir, getcwd
 from os.path import join
 import numpy as np
+import cv2
+import sys
 from pdb import *
 
 sets=[('2012', 'train'), ('2012', 'val'), ('2007', 'train'), ('2007', 'val'), ('2007', 'test')]
@@ -25,9 +27,16 @@ def convert(size, box):
     h = h*dh
     return (x,y,w,h)
 
+DIVISIONS=4
+DIV_RATE=(1./DIVISIONS+0.01)
+NN_IN_SIZE=32
+MIN_PATCH=128
+
+DEBUG=True
 def convert_annotation(year, image_id):
     in_file = open('VOCdevkit/VOC%s/Annotations/%s.xml'%(year, image_id))
     out_file = open('VOCdevkit/VOC%s/labels/%s.txt'%(year, image_id), 'w')
+    if DEBUG:img = cv2.imread('VOCdevkit/VOC%s/JPEGImages/%s.jpg'%(year, image_id))
     tree=ET.parse(in_file)
     root = tree.getroot()
     size = root.find('size')
@@ -43,18 +52,29 @@ def convert_annotation(year, image_id):
         cls_id = classes.index(cls)
         xmlbox = obj.find('bndbox')
         b = (float(xmlbox.find('xmin').text), float(xmlbox.find('xmax').text), float(xmlbox.find('ymin').text), float(xmlbox.find('ymax').text))
+        B=(int(xmlbox.find('xmin').text),int(xmlbox.find('xmax').text),int(xmlbox.find('ymin').text),int(xmlbox.find('ymax').text))
         bb = convert((w,h), b)
-	xp = int(b[0]/w/0.25)
-	xq = int(xp+(b[1]-b[0])/w/0.25)
-	yp = int(b[2]/h/0.25)
-	yq = int(yp+(b[3]-b[2])/h/0.25)
-	print("%s %d %d %d %d : %d %d %d %d : %d %d"%(image_id,xp,xq,yp,yq,b[0],b[1],b[2],b[3],w,h))
-        if (b[1]-b[0])>=3/32 and (b[3]-b[2])>=3/32:
-            for i in range(xp,xq):
-                for j in range(yp,yq):
-		    Gtruth[i][j]=1.
-        out_file.write("14 "+str(Gtruth)+"\n")
-        #out_file.write(str(cls_id) + " " + " ".join([str(a) for a in bb]) + '\n')
+        xp = int(round(b[0]/w/DIV_RATE,1))
+        xq = int(round(b[1]/w/DIV_RATE,1))
+        yp = int(round(b[2]/h/DIV_RATE,1))
+        yq = int(round(b[3]/h/DIV_RATE,1))
+        if (b[1]-b[0])>=MIN_PATCH or (b[3]-b[2])>=MIN_PATCH:
+            if DEBUG:print("%s %d %d %d %d : %d %d %d %d : %d %d"%(image_id,xp,xq,yp,yq,b[0],b[1],b[2],b[3],w,h))
+            for j in range(yp,yq+1):
+                for i in range(xp,xq+1):
+                    Gtruth[i][j]=1.
+                    if DEBUG:sys.stdout.write("%2d-"%(j*DIVISIONS+i))
+            if DEBUG:print("")
+        if DEBUG:cv2.rectangle(img,(B[0],B[2]),(B[1],B[3]),(255,0,255),8)
+        #print((B[0],B[2]),(B[1],B[3]))
+    out_file.write("14 "+str(Gtruth)+"\n")
+    #out_file.write(str(cls_id) + " " + " ".join([str(a) for a in bb]) + '\n')
+    if DEBUG:img = cv2.resize(img,(32,32))
+    if DEBUG:img = cv2.resize(img,(w,h))
+    if DEBUG:cv2.imshow('%s'%(image_id),img)
+    while(1):
+        if cv2.waitKey(100) == 27: break
+    cv2.destroyAllWindows()
     in_file.close()
     out_file.close()
 
