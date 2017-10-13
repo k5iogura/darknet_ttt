@@ -30,16 +30,38 @@ def convert(size, box):
 DIVISIONS=4
 DIV_RATE=(1./DIVISIONS+0.01)
 NN_IN_SIZE=32
+NN_IN_CHNL=3
 MIN_PATCH=128
+
+img_count=0
+max_count=3000
+image_nd = np.zeros(
+        max_count * NN_IN_SIZE * NN_IN_SIZE * NN_IN_CHNL,
+        dtype=np.float32
+    ).reshape(
+        max_count,
+        NN_IN_CHNL,
+        NN_IN_SIZE,
+        NN_IN_SIZE
+    )
+
+prob_nd = np.zeros(
+        max_count * DIVISIONS * DIVISIONS,
+        dtype=np.int32
+    ).reshape(
+        max_count,
+        DIVISIONS * DIVISIONS
+    )
 
 DEBUG=True
 DEBUG=False
 def convert_annotation(year, image_id):
+    global img_count
+    global image_nd
+    global prob_nd
     in_file = open('VOCdevkit/VOC%s/Annotations/%s.xml'%(year, image_id))
     out_file = open('VOCdevkit/VOC%s/labels/%s.txt'%(year, image_id), 'w')
-    print('VOCdevkit/VOC%s/labels/%s.txt'%(year, image_id))
-#    if image_id == '000374':sys.exit(1)
-    if DEBUG:img = cv2.imread('VOCdevkit/VOC%s/JPEGImages/%s.jpg'%(year, image_id))
+    img = cv2.imread('VOCdevkit/VOC%s/JPEGImages/%s.jpg'%(year, image_id))
     tree=ET.parse(in_file)
     root = tree.getroot()
     size = root.find('size')
@@ -68,12 +90,21 @@ def convert_annotation(year, image_id):
                     Gtruth[i][j]=1.
                     if DEBUG:sys.stdout.write("%2d-"%(j*DIVISIONS+i))
         if DEBUG:cv2.rectangle(img,(B[0],B[2]),(B[1],B[3]),(255,0,255),8)
-    #out_file.write(str(cls_id) + " " + " ".join([str(a) for a in bb]) + '\n')
-	for j in range(0,DIVISIONS):
-		for i in range(0,DIVISIONS):
-			out_file.write(str("%2d "%(Gtruth[i][j])))
-	out_file.write("\n")
-    if DEBUG:img = cv2.resize(img,(32,32))
+    # write out into check file for debug
+    for j in range(0,DIVISIONS):
+        for i in range(0,DIVISIONS):
+            out_file.write(str("%2d "%(Gtruth[i][j])))
+    out_file.write("\n")
+    # swap RGB Pixel-Wise to BGR Channel-Wise and save global area
+    img_pw_rgb = cv2.resize(img,(NN_IN_SIZE,NN_IN_SIZE))
+    img_cw_bgr0=img_pw_rgb.transpose(2,1,0).copy()
+    img_cw_bgr1=img_pw_rgb.transpose(2,1,0).copy()
+    img_cw_bgr0[0]=img_cw_bgr1[2]
+    img_cw_bgr0[2]=img_cw_bgr1[0]
+    image_nd[img_count] = img_cw_bgr1
+    # save global area
+    prob_nd[img_count]=Gtruth.reshape(DIVISIONS*DIVISIONS)
+    img_count+=1
     if DEBUG:img = cv2.resize(img,(w,h))
     if DEBUG:cv2.imshow('%s'%(image_id),img)
     if DEBUG:
@@ -90,14 +121,22 @@ for year, image_set in sets:
         os.makedirs('VOCdevkit/VOC%s/labels/'%(year))
     image_ids = open('VOCdevkit/VOC%s/ImageSets/Main/%s.txt'%(year, image_set)).read().strip().split()
     list_file = open('%s_%s.txt'%(year, image_set), 'w')
-    stopcnt = 0
+    #stopcnt = 0
     for image_id in image_ids:
         list_file.write('%s/VOCdevkit/VOC%s/JPEGImages/%s.jpg\n'%(wd, year, image_id))
         convert_annotation(year, image_id)
-	stopcnt+=1
-	if stopcnt >= 100: break
+	#stopcnt+=1
+	#if stopcnt >= 100: break
     list_file.close()
 
+# write global area out
+print("img_count=%d"%img_count)
+with open('image.pkl','wb') as f:
+    pickle.dump(image_nd[:img_count],f)
+with open('prob.pkl','wb') as f:
+    pickle.dump(prob_nd[:img_count],f)
+
+# write list out
 os.system("cat 2007_train.txt 2007_val.txt 2012_train.txt 2012_val.txt > train.txt")
 os.system("cat 2007_train.txt 2007_val.txt 2007_test.txt 2012_train.txt 2012_val.txt > train.all.txt")
 
