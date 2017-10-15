@@ -1,0 +1,255 @@
+import xml.etree.ElementTree as ET
+import pickle
+import os
+from os import listdir, getcwd
+from os.path import join
+import numpy as np
+import cv2
+import sys
+import argparse
+from pdb import *
+
+sets=[('2012', 'train'), ('2012', 'val'), ('2007', 'train'), ('2007', 'val'), ('2007', 'test')]
+
+#classes = ["aeroplane", "bicycle", "bird", "boat", "bottle", "bus", "car", "cat", "chair", "cow", "diningtable", "dog", "horse", "motorbike", "person", "pottedplant", "sheep", "sofa", "train", "tvmonitor"]
+classes = ["person"]
+
+def convert(size, box):
+    dw = 1./(size[0])
+    dh = 1./(size[1])
+    x = (box[0] + box[1])/2.0 - 1
+    y = (box[2] + box[3])/2.0 - 1
+    w = box[1] - box[0]
+    h = box[3] - box[2]
+    x = x*dw
+    w = w*dw
+    y = y*dh
+    h = h*dh
+    return (x,y,w,h)
+
+def convert_annotation(year, image_id):
+    posN=0
+    rejP=0
+    in_file = open('VOCdevkit/VOC%s/Annotations/%s.xml'%(year, image_id))
+    out_file = open('VOCdevkit/VOC%s/labels/%s.txt'%(year, image_id), 'w')
+    img = cv2.imread('VOCdevkit/VOC%s/JPEGImages/%s.jpg'%(year, image_id))
+    tree=ET.parse(in_file)
+    root = tree.getroot()
+    size = root.find('size')
+    w = int(size.find('width').text)
+    h = int(size.find('height').text)
+
+    Gtruth = np.zeros(16,dtype=np.float32).reshape(4,4)
+    for obj in root.iter('object'):
+        difficult = obj.find('difficult').text
+        cls = obj.find('name').text
+        if cls not in classes or int(difficult)==1:
+            continue
+        cls_id = classes.index(cls)
+        xmlbox = obj.find('bndbox')
+        b = (float(xmlbox.find('xmin').text), float(xmlbox.find('xmax').text), float(xmlbox.find('ymin').text), float(xmlbox.find('ymax').text))
+        B=(int(xmlbox.find('xmin').text),int(xmlbox.find('xmax').text),int(xmlbox.find('ymin').text),int(xmlbox.find('ymax').text))
+        bb = convert((w,h), b)
+        xp = int(round(b[0]/w/DIV_RATE,1))
+        xq = int(round(b[1]/w/DIV_RATE,1))
+        yp = int(round(b[2]/h/DIV_RATE,1))
+        yq = int(round(b[3]/h/DIV_RATE,1))
+        if (b[1]-b[0])>=MIN_PATCH and (b[3]-b[2])>=MIN_PATCH:
+            posN+=1
+            if DEBUG1:print("%s %d %d %d %d : %d %d %d %d : %d %d"%(image_id,xp,xq,yp,yq,b[0],b[1],b[2],b[3],w,h))
+            for j in range(yp,yq+1):
+                for i in range(xp,xq+1):
+                    Gtruth[j][i]=1.
+                    if DEBUG1:sys.stdout.write("%2d-"%(j*DIVISIONS+i))
+                if DEBUG1:print("")
+            if DEBUG1:print("")
+        else:
+            rejP+=1
+        if DEBUG1:cv2.rectangle(img,(B[0],B[2]),(B[1],B[3]),(255,0,255),8)
+    # write out into check file for debug
+    for j in range(0,DIVISIONS):
+        for i in range(0,DIVISIONS):
+            out_file.write(str("%2d "%(Gtruth[i][j])))
+    out_file.write("\n")
+    # swap RGB Pixel-Wise to BGR Channel-Wise and save global area
+    img_pw_rgb = cv2.resize(img,(NN_IN_SIZE,NN_IN_SIZE))
+    img_cw_bgr0=img_pw_rgb.transpose(2,1,0).copy()
+    img_cw_bgr1=img_pw_rgb.transpose(2,1,0).copy()
+    img_cw_bgr0[0]=img_cw_bgr1[2]
+    img_cw_bgr0[2]=img_cw_bgr1[0]
+    # save global area
+    prob  = Gtruth.reshape(DIVISIONS*DIVISIONS)
+    #if DEBUG1:img = cv2.resize(img,(w,h))
+    if DEBUG1:img = cv2.resize(img_cw_bgr0.transpose(2,1,0),(w,h))
+    if DEBUG1:cv2.imshow('%s'%(image_id),img)
+    if DEBUG1:
+        while(1):
+            key=cv2.waitKey(100)
+            if key == 27: sys.exit(1)   # ESC
+            if key == 32: break         # space
+    if DEBUG1:cv2.destroyAllWindows()
+    in_file.close()
+    out_file.close()
+    return posN, rejP, img_cw_bgr0, prob
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Original dataset and annotation into pickle')
+    parser.add_argument('--debug1', action="store_true")
+    parser.add_argument('--debug2', action="store_true")
+    parser.add_argument('--image_file', '-i', type=str, default="voc_image.pkl")
+    parser.add_argument('--prob_file',  '-p', type=str, default="voc_prob.pkl")
+    parser.add_argument('--max_count',  '-m', type=int, default=200)
+    parser.add_argument('--nn_in_size',       type=int, default=32)
+    parser.add_argument('--min_patch',        type=int, default=128)
+    args = parser.parse_args()
+
+    voc_image_file = args.image_file
+    voc_prob_file  = args.prob_file
+    DEBUG1=False
+    if args.debug1:DEBUG1=True
+    DEBUG2=False
+    if args.debug2:DEBUG2=True
+    counter=0
+
+    DIVISIONS=4
+    DIV_RATE=(1./DIVISIONS+0.01)
+    NN_IN_SIZE=32
+    NN_IN_CHNL=3
+    MIN_PATCH=128
+    if args.nn_in_size:NN_IN_SIZE=int(args.nn_in_size)
+    if args.min_patch:MIN_PATCH=int(args.min_patch)
+
+    img_count=0
+    #if args.max_count: max_count=int(args.max_count)
+    image_posiN=0
+    image_negaN=0
+    files=[]
+    if os.path.exists('lfw'):
+        jpg_dirs  = [name_dir for name_dir in os.listdir('lfw')]
+        for jpg_dir in jpg_dirs:
+            jpg_files = os.listdir('lfw/'+str(jpg_dir))
+            for jpg_file in jpg_files:
+                files.append('lfw/'+str(jpg_dir)+'/'+str(jpg_file))
+    print('In lfw dir, jpg files = %d'%len(files))
+    max_count=len(files)
+
+    image_posi = np.zeros(
+            max_count * NN_IN_SIZE * NN_IN_SIZE * NN_IN_CHNL,
+            dtype=np.uint8
+        ).reshape(
+            max_count,
+            NN_IN_CHNL,
+            NN_IN_SIZE,
+            NN_IN_SIZE
+        )
+    image_nega = image_posi.copy()
+    train_image= image_posi.copy()
+    test_image = image_posi.copy()
+
+    prob_posi = np.zeros(
+            max_count * DIVISIONS * DIVISIONS,
+            dtype=np.int32
+        ).reshape(
+            max_count,
+            DIVISIONS * DIVISIONS
+        )
+    prob_nega = prob_posi.copy()
+    train_prob= prob_posi.copy()
+    test_prob = prob_posi.copy()
+
+    wd = getcwd()
+
+    prob_const  = np.array([0,1,1,0,0,1,1,0,0,1,1,0,1,1,1,1],dtype=np.float32)
+    for jpg in files:
+        img = cv2.imread(jpg)
+        img = cv2.resize(img,(NN_IN_SIZE,NN_IN_SIZE))
+        img_bgr_cw0=img.transpose(2,1,0).copy()
+        img_rgb_cw1=img.transpose(2,1,0).copy()
+        img_bgr_cw0[0] = img_rgb_cw1[2]
+        img_bgr_cw0[2] = img_rgb_cw1[0]
+        image_posi[image_posiN] = img_bgr_cw0
+        prob_posi[image_posiN]  = prob_const
+        image_posiN+=1
+    sys.exit(1)
+
+    for year, image_set in sets:
+        if not os.path.exists('VOCdevkit/VOC%s/labels/'%(year)):
+            os.makedirs('VOCdevkit/VOC%s/labels/'%(year))
+        image_ids = open('VOCdevkit/VOC%s/ImageSets/Main/%s.txt'%(year, image_set)).read().strip().split()
+        list_file = open('%s_%s.txt'%(year, image_set), 'w')
+        for image_id in image_ids:
+            list_file.write('%s/VOCdevkit/VOC%s/JPEGImages/%s.jpg\n'%(wd, year, image_id))
+            posN, rejP, image, prob = convert_annotation(year, image_id)
+            if posN>0 and posN!=rejP:
+                image_posi[image_posiN] = image.copy()
+                prob_posi[image_posiN]  = prob.copy()
+                image_posiN+=1
+            elif posN==0 and rejP==0:
+                image_nega[image_negaN] = image.copy()
+                prob_nega[image_negaN]  = prob.copy()
+                image_negaN+=1
+            else:
+                image_rejP+=1
+            counter+=1
+            if counter%200 == 0:print("Processing %d/%d(posi/nega/rej=%d/%d/%d)"%(counter,max_count,image_posiN,image_negaN,image_rejP))
+            if image_posiN+image_negaN+image_rejP>=max_count:break
+        list_file.close()
+
+    print("*Dataset statistics*")
+    print("all : image_posiN/image_negaN=%d/%d"%(image_posiN,image_negaN))
+    # number of data abount posi vs nega
+    #posi:nega=7:3
+    #3posi=7nega
+    #nega=3posi/7
+    image_negaN_tmp = int(3*image_posiN/7)
+    if image_negaN_tmp>image_negaN:
+        print("Error:Negative Data is Shortage. %d data but %d Needed"%(image_negaN,image_negaN_tmp))
+    else:
+        image_negaN = image_negaN_tmp
+
+    # split image_posiN into train and test
+    test_posiN = int(image_posiN / 10)
+    train_posiN= image_posiN - test_posiN
+
+    # split image_negaN into train and test
+    test_negaN = int(image_negaN / 10)
+    train_negaN= image_negaN - test_negaN
+    print("7:3 : image_posiN/image_negaN=%d/%d"%(image_posiN,image_negaN))
+
+    train_image[:train_posiN]                        = image_posi[:train_posiN]
+    train_image[train_posiN:train_posiN+train_negaN] = image_nega[:train_negaN]
+    train_prob[:train_posiN]                         = prob_posi[:train_posiN]
+    train_prob[train_posiN:train_posiN+train_negaN]  = prob_nega[:train_negaN]
+
+    test_image[:test_posiN]                          = image_posi[train_posiN:train_posiN+test_posiN]
+    test_image[test_posiN:test_posiN+test_negaN]     = image_nega[train_negaN:train_negaN+test_negaN]
+    test_prob[:test_posiN]                           = prob_posi[train_posiN:train_posiN+test_posiN]
+    test_prob[test_posiN:test_posiN+test_negaN]      = prob_nega[train_negaN:train_negaN+test_negaN]
+    print("train = %06d = posi/nega= %05d/%05d"%(train_posiN+train_negaN,train_posiN,train_negaN))
+    print("test  = %06d = posi/nega= %05d/%05d"%(test_posiN+test_negaN,test_posiN,test_negaN))
+
+    if test_posiN > 0:
+
+        image_buf = {'test':test_image[:test_posiN+test_negaN], 'train':train_image[:train_posiN+train_negaN]}
+        prob_buf  = {'test': test_prob[:test_posiN+test_negaN], 'train': train_prob[:train_posiN+train_negaN]}
+        # write global area out
+        with open(voc_image_file,'wb') as f:
+            pickle.dump(image_buf,f)
+        with open(voc_prob_file,'wb') as f:
+            pickle.dump(prob_buf,f)
+
+        # write list out
+        os.system("cat 2007_train.txt 2007_val.txt 2012_train.txt 2012_val.txt > train.txt")
+        os.system("cat 2007_train.txt 2007_val.txt 2007_test.txt 2012_train.txt 2012_val.txt > train.all.txt")
+
+    else:
+        print("Error:No Data")
+
+    if DEBUG2:
+        for i in range(0,5):
+            cv2.imshow('return image', train_image[i].transpose(2,1,0).astype(np.uint8))
+            while(1):
+                key = cv2.waitKey(30)
+                if key ==32:break
+                if key ==27:sys.exit(1)
+
