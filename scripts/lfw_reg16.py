@@ -7,6 +7,7 @@ import numpy as np
 import cv2
 import sys
 import argparse
+import fnmatch
 from pdb import *
 
 if __name__ == '__main__':
@@ -40,19 +41,16 @@ if __name__ == '__main__':
     image_negaN=0
     files=[]
     max_count_tmp=0
-    if os.path.exists(args.dataset_prefix):
-        jpg_dirs  = [name_dir for name_dir in os.listdir(args.dataset_prefix)]
-        for jpg_dir in jpg_dirs:
-            jpg_files = os.listdir(args.dataset_prefix+'/'+str(jpg_dir))
-            for jpg_file in jpg_files:
-                if args.max_count>0 and args.max_count <= max_count_tmp: break
-                files.append(args.dataset_prefix+'/'+str(jpg_dir)+'/'+str(jpg_file))
-                max_count_tmp+=1
-        max_count=len(files)
-        print('In %s dir, jpg files = %d'%(args.dataset_prefix,len(files)))
-    else:
-        print("%s directory not found"%(args.dataset_prefix))
-        sys.exit(1)
+    for root,dirs,names in os.walk(args.dataset_prefix):
+        finded_files = [os.path.join(root,f) for f in names
+            if fnmatch.fnmatch(os.path.join(root,f),'*.jpg')]
+        files.extend(finded_files)
+        max_count_tmp+=len(finded_files)
+        if args.max_count>0 and args.max_count <= max_count_tmp: break
+
+    max_count=len(files)
+    print('In %s dir, jpg files = %d'%(args.dataset_prefix,len(files)))
+    if max_count==0: sys.exit(1)
 
     image_posi = np.zeros(
             max_count * NN_IN_SIZE * NN_IN_SIZE * NN_IN_CHNL,
