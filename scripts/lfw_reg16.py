@@ -17,6 +17,7 @@ if __name__ == '__main__':
     parser.add_argument('--debug2', action="store_true")
     parser.add_argument('--image_file', '-i', type=str, default="image.pkl")
     parser.add_argument('--prob_file',  '-p', type=str, default="prob.pkl")
+    parser.add_argument('--nega',       '-n', action="store_true")
     parser.add_argument('--max_count',  '-m', type=int, default=0)
     parser.add_argument('--nn_in_size',       type=int, default=32)
     parser.add_argument('--min_patch',        type=int, default=128)
@@ -79,7 +80,10 @@ if __name__ == '__main__':
     wd = getcwd()
 
     counter=0
-    prob_const  = np.array([0,1,1,0,0,1,1,0,0,1,1,0,1,1,1,1],dtype=np.float32)
+    if args.nega:
+        prob_const  = np.array([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],dtype=np.float32)
+    else:
+        prob_const  = np.array([0,1,1,0,0,1,1,0,0,1,1,0,1,1,1,1],dtype=np.float32)
     for jpg in files:
         img = cv2.imread(jpg)
         img = cv2.resize(img,(NN_IN_SIZE,NN_IN_SIZE))
