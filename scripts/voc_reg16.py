@@ -78,7 +78,7 @@ def convert_annotation(year, image_id):
     img_cw_bgr0[0]=img_cw_bgr1[2]
     img_cw_bgr0[2]=img_cw_bgr1[0]
     # save global area
-    prob  = Gtruth.reshape(DIVISIONS*DIVISIONS)
+    truth  = Gtruth.reshape(DIVISIONS*DIVISIONS)
     #if DEBUG1:img = cv2.resize(img,(w,h))
     if DEBUG1:img = cv2.resize(img_cw_bgr0.transpose(2,1,0),(w,h))
     if DEBUG1:cv2.imshow('%s'%(image_id),img)
@@ -90,26 +90,23 @@ def convert_annotation(year, image_id):
     if DEBUG1:cv2.destroyAllWindows()
     in_file.close()
     out_file.close()
-    return posN, rejP, img_cw_bgr0, prob
+    return posN, rejP, img_cw_bgr0, truth
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Original dataset and annotation into pickle')
     parser.add_argument('--debug1', action="store_true")
     parser.add_argument('--debug2', action="store_true")
-    parser.add_argument('--image_file', '-i', type=str, default="voc_image.pkl")
-    parser.add_argument('--prob_file',  '-p', type=str, default="voc_prob.pkl")
+    parser.add_argument('--image_file', '-i', type=str, default="voc_ds.pkl")
     parser.add_argument('--max_count',  '-m', type=int, default=200)
     parser.add_argument('--nn_in_size',       type=int, default=32)
     parser.add_argument('--min_patch',        type=int, default=128)
     args = parser.parse_args()
 
     voc_image_file = args.image_file
-    voc_prob_file  = args.prob_file
     DEBUG1=False
     if args.debug1:DEBUG1=True
     DEBUG2=False
     if args.debug2:DEBUG2=True
-    counter=0
 
     DIVISIONS=4
     DIV_RATE=(1./DIVISIONS+0.01)
@@ -132,46 +129,56 @@ if __name__ == '__main__':
             NN_IN_SIZE
         )
     image_nega = image_posi.copy()
-    train_image= image_posi.copy()
-    test_image = image_posi.copy()
+    image_ambi = image_posi.copy()
+    path_posi = np.zeros(max_count,dtype=np.dtype('U256'))
+    path_nega = path_posi.copy()
+    path_ambi = path_posi.copy()
 
-    prob_posi = np.zeros(
+    truth_posi = np.zeros(
             max_count * DIVISIONS * DIVISIONS,
             dtype=np.int32
         ).reshape(
             max_count,
             DIVISIONS * DIVISIONS
         )
-    prob_nega = prob_posi.copy()
-    train_prob= prob_posi.copy()
-    test_prob = prob_posi.copy()
+    truth_nega = truth_posi.copy()
+    truth_ambi = truth_posi.copy()
 
     wd = getcwd()
 
+    counter=0
     image_posiN=0
     image_negaN=0
-    image_rejP =0
+    image_ambiN=0
     for year, image_set in sets:
         if not os.path.exists('VOCdevkit/VOC%s/labels/'%(year)):
             os.makedirs('VOCdevkit/VOC%s/labels/'%(year))
         image_ids = open('VOCdevkit/VOC%s/ImageSets/Main/%s.txt'%(year, image_set)).read().strip().split()
         list_file = open('%s_%s.txt'%(year, image_set), 'w')
         for image_id in image_ids:
+            file_name = '%s/VOCdevkit/VOC%s/JPEGImages/%s.jpg'%(wd, year, image_id)
             list_file.write('%s/VOCdevkit/VOC%s/JPEGImages/%s.jpg\n'%(wd, year, image_id))
-            posN, rejP, image, prob = convert_annotation(year, image_id)
+            posN, rejP, image, truth = convert_annotation(year, image_id)
             if posN>0 and posN!=rejP:
                 image_posi[image_posiN] = image.copy()
-                prob_posi[image_posiN]  = prob.copy()
+                truth_posi[image_posiN] = truth.copy()
+                path_posi[image_posiN]  = file_name
                 image_posiN+=1
             elif posN==0 and rejP==0:
                 image_nega[image_negaN] = image.copy()
-                prob_nega[image_negaN]  = prob.copy()
+                truth_nega[image_negaN] = truth.copy()
+                path_nega[image_negaN]  = file_name
                 image_negaN+=1
             else:
-                image_rejP+=1
+                image_ambi[image_ambiN] = image.copy()
+                truth_ambi[image_ambiN] = truth.copy()
+                path_ambi[image_ambiN] = file_name
+                image_ambiN+=1
             counter+=1
-            if counter%200 == 0:print("Processing %d/%d(posi/nega/rej=%d/%d/%d)"%(counter,max_count,image_posiN,image_negaN,image_rejP))
-            if image_posiN+image_negaN+image_rejP>=max_count:break
+            if counter%200 == 0:print(
+                "Processing %d/%d(posi/nega/rej=%d/%d/%d)"%(counter,max_count,image_posiN,image_negaN,image_ambiN)
+                )
+            if image_posiN+image_negaN+image_ambiN>=max_count:break
         list_file.close()
 
     print("*Dataset statistics*")
@@ -180,53 +187,65 @@ if __name__ == '__main__':
     #posi:nega=7:3
     #3posi=7nega
     #nega=3posi/7
-    image_negaN_tmp = int(3*image_posiN/7)
-    if image_negaN_tmp>image_negaN:
-        print("Error:Negative Data is Shortage. %d data but %d Needed"%(image_negaN,image_negaN_tmp))
-    else:
-        image_negaN = image_negaN_tmp
+#    image_negaN_tmp = int(3*image_posiN/7)
+#    if image_negaN_tmp>image_negaN:
+#        print("Error:Negative Data is Shortage. %d data but %d Needed"%(image_negaN,image_negaN_tmp))
+#    else:
+#        image_negaN = image_negaN_tmp
 
     # split image_posiN into train and test
-    test_posiN = int(image_posiN / 10)
-    train_posiN= image_posiN - test_posiN
+#    test_posiN = int(image_posiN / 10)
+#    train_posiN= image_posiN - test_posiN
 
     # split image_negaN into train and test
-    test_negaN = int(image_negaN / 10)
-    train_negaN= image_negaN - test_negaN
-    print("7:3 : image_posiN/image_negaN=%d/%d"%(image_posiN,image_negaN))
+#    test_negaN = int(image_negaN / 10)
+#    train_negaN= image_negaN - test_negaN
+#    print("7:3 : image_posiN/image_negaN=%d/%d"%(image_posiN,image_negaN))
 
-    train_image[:train_posiN]                        = image_posi[:train_posiN]
-    train_image[train_posiN:train_posiN+train_negaN] = image_nega[:train_negaN]
-    train_prob[:train_posiN]                         = prob_posi[:train_posiN]
-    train_prob[train_posiN:train_posiN+train_negaN]  = prob_nega[:train_negaN]
+#    train_image[:train_posiN]                        = image_posi[:train_posiN]
+#    train_image[train_posiN:train_posiN+train_negaN] = image_nega[:train_negaN]
+#    train_prob[:train_posiN]                         = truth_posi[:train_posiN]
+#    train_prob[train_posiN:train_posiN+train_negaN]  = truth_nega[:train_negaN]
 
-    test_image[:test_posiN]                          = image_posi[train_posiN:train_posiN+test_posiN]
-    test_image[test_posiN:test_posiN+test_negaN]     = image_nega[train_negaN:train_negaN+test_negaN]
-    test_prob[:test_posiN]                           = prob_posi[train_posiN:train_posiN+test_posiN]
-    test_prob[test_posiN:test_posiN+test_negaN]      = prob_nega[train_negaN:train_negaN+test_negaN]
-    print("train = %06d = posi/nega= %05d/%05d"%(train_posiN+train_negaN,train_posiN,train_negaN))
-    print("test  = %06d = posi/nega= %05d/%05d"%(test_posiN+test_negaN,test_posiN,test_negaN))
+#    test_image[:test_posiN]                          = image_posi[train_posiN:train_posiN+test_posiN]
+#    test_image[test_posiN:test_posiN+test_negaN]     = image_nega[train_negaN:train_negaN+test_negaN]
+#    test_prob[:test_posiN]                           = truth_posi[train_posiN:train_posiN+test_posiN]
+#    test_prob[test_posiN:test_posiN+test_negaN]      = truth_nega[train_negaN:train_negaN+test_negaN]
+#    print("train = %06d = posi/nega= %05d/%05d"%(train_posiN+train_negaN,train_posiN,train_negaN))
+#    print("test  = %06d = posi/nega= %05d/%05d"%(test_posiN+test_negaN,test_posiN,test_negaN))
 
-    if test_posiN > 0:
+    if counter > 0:
 
-        image_buf = {'test':test_image[:test_posiN+test_negaN], 'train':train_image[:train_posiN+train_negaN]}
-        prob_buf  = {'test': test_prob[:test_posiN+test_negaN], 'train': train_prob[:train_posiN+train_negaN]}
+        image_buf = {
+            'image_posi':image_posi[:image_posiN],
+            'image_nega':image_nega[:image_negaN],
+            'image_ambi':image_ambi[:image_ambiN],
+            'truth_posi':truth_posi[:image_posiN],
+            'truth_nega':truth_nega[:image_negaN],
+            'truth_ambi':truth_ambi[:image_ambiN],
+            'path_posi':path_posi[:image_posiN],
+            'path_nega':path_posi[:image_negaN],
+            'path_ambi':path_posi[:image_ambiN]
+            }
         # write global area out
         with open(voc_image_file,'wb') as f:
             pickle.dump(image_buf,f)
-        with open(voc_prob_file,'wb') as f:
-            pickle.dump(prob_buf,f)
 
         # write list out
-        os.system("cat 2007_train.txt 2007_val.txt 2012_train.txt 2012_val.txt > train.txt")
-        os.system("cat 2007_train.txt 2007_val.txt 2007_test.txt 2012_train.txt 2012_val.txt > train.all.txt")
+        #os.system("cat 2007_train.txt 2007_val.txt 2012_train.txt 2012_val.txt > train.txt")
+        #os.system("cat 2007_train.txt 2007_val.txt 2007_test.txt 2012_train.txt 2012_val.txt > train.all.txt")
 
     else:
         print("Error:No Data")
 
     if DEBUG2:
         for i in range(0,5):
-            cv2.imshow('return image', train_image[i].transpose(2,1,0).astype(np.uint8))
+            posi=cv2.resize(image_buf['image_posi'][i].transpose(2,1,0).astype(np.uint8),(64,64))
+            nega=cv2.resize(image_buf['image_nega'][i].transpose(2,1,0).astype(np.uint8),(64,64))
+            ambi=cv2.resize(image_buf['image_ambi'][i].transpose(2,1,0).astype(np.uint8),(64,64))
+            cv2.imshow('return image posi', posi)
+            cv2.imshow('return image nega', nega)
+            cv2.imshow('return image ambi', ambi)
             while(1):
                 key = cv2.waitKey(30)
                 if key ==32:break

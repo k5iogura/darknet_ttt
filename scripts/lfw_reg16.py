@@ -15,8 +15,7 @@ if __name__ == '__main__':
     parser.add_argument('dataset_prefix', type=str)
     parser.add_argument('--debug1', action="store_true")
     parser.add_argument('--debug2', action="store_true")
-    parser.add_argument('--image_file', '-i', type=str, default="image.pkl")
-    parser.add_argument('--prob_file',  '-p', type=str, default="prob.pkl")
+    parser.add_argument('--image_file', '-i', type=str, default="ds.pkl")
     parser.add_argument('--nega',       '-n', action="store_true")
     parser.add_argument('--max_count',  '-m', type=int, default=0)
     parser.add_argument('--nn_in_size',       type=int, default=32)
@@ -24,8 +23,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     pkl_image_file = '%s_%s'%(args.dataset_prefix,args.image_file)
-    pkl_prob_file  = '%s_%s'%(args.dataset_prefix,args.prob_file)
-    print('create %s and %s'%(pkl_image_file,pkl_prob_file))
+    print('create %s'%(pkl_image_file))
 
     DEBUG1=False
     if args.debug1:DEBUG1=True
@@ -38,8 +36,6 @@ if __name__ == '__main__':
     if args.nn_in_size:NN_IN_SIZE=int(args.nn_in_size)
     if args.min_patch:MIN_PATCH=int(args.min_patch)
 
-    image_posiN=0
-    image_negaN=0
     files=[]
     max_count_tmp=0
     for root,dirs,names in os.walk(args.dataset_prefix):
@@ -63,48 +59,68 @@ if __name__ == '__main__':
             NN_IN_SIZE
         )
     image_nega = image_posi.copy()
-    train_image= image_posi.copy()
-    test_image = image_posi.copy()
+    image_ambi = image_posi.copy()
+    path_posi  = np.zeros(max_count,dtype=np.dtype('U256'))
+    path_nega  = path_posi.copy()
+    path_ambi  = path_posi.copy()
 
-    prob_posi = np.zeros(
+    truth_posi = np.zeros(
             max_count * DIVISIONS * DIVISIONS,
             dtype=np.int32
         ).reshape(
             max_count,
             DIVISIONS * DIVISIONS
         )
-    prob_nega = prob_posi.copy()
-    train_prob= prob_posi.copy()
-    test_prob = prob_posi.copy()
+    truth_nega = truth_posi.copy()
+    truth_ambi = truth_posi.copy()
 
     wd = getcwd()
 
+    image_posiN=0
+    image_negaN=0
+    image_ambiN=0
     counter=0
     if args.nega:
-        prob_const  = np.array([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],dtype=np.float32)
+        truth_const  = np.array([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],dtype=np.float32)
     else:
-        prob_const  = np.array([0,1,1,0,0,1,1,0,0,1,1,0,1,1,1,1],dtype=np.float32)
+        truth_const  = np.array([0,1,1,0,0,1,1,0,0,1,1,0,1,1,1,1],dtype=np.float32)
     for jpg in files:
         img = cv2.imread(jpg)
+        if img is None: continue
         img = cv2.resize(img,(NN_IN_SIZE,NN_IN_SIZE))
         img_bgr_cw0=img.transpose(2,1,0).copy()
         img_rgb_cw1=img.transpose(2,1,0).copy()
         img_bgr_cw0[0] = img_rgb_cw1[2]
         img_bgr_cw0[2] = img_rgb_cw1[0]
-        image_posi[image_posiN] = img_bgr_cw0
-        prob_posi[image_posiN]  = prob_const
-        image_posiN+=1
+        if args.nega is False:
+            image_posi[image_posiN] = img_bgr_cw0
+            truth_posi[image_posiN]  = truth_const
+            image_posiN+=1
+        else:
+            image_nega[image_negaN] = img_bgr_cw0
+            truth_nega[image_negaN]  = truth_const
+            image_negaN+=1
         counter+=1
         if counter%200 == 0:print("Processing %d/%d"%(counter,max_count))
 
     # write pkl file out
-    if image_posiN > 0:
+    if counter > 0:
 
         # write global area out
+        image_buf={
+            'image_posi':image_posi[:image_posiN],
+            'image_nega':image_nega[:image_negaN],
+            'image_ambi':image_ambi[:image_ambiN],
+            'truth_posi':truth_posi[:image_posiN],
+            'truth_nega':truth_nega[:image_negaN],
+            'truth_ambi':truth_ambi[:image_ambiN],
+            'path_posi':path_posi[:image_posiN],
+            'path_nega':path_posi[:image_negaN],
+            'path_ambi':path_posi[:image_ambiN]
+            }
         with open(pkl_image_file,'wb') as f:
-            pickle.dump(image_posi,f)
-        with open(pkl_prob_file,'wb') as f:
-            pickle.dump(prob_posi,f)
+            pickle.dump(image_buf,f)
+        print('%s include %d image files (posi/nega/ambi=%d/%d/%d)'%(pkl_image_file,counter,image_posiN,image_negaN,image_ambiN))
 
         # write list out
         #os.system("cat 2007_train.txt 2007_val.txt 2012_train.txt 2012_val.txt > train.txt")
@@ -116,7 +132,7 @@ if __name__ == '__main__':
     if DEBUG1:
         for i in range(10,15):
             cv2.imshow('return image', image_posi[i].transpose(2,1,0).astype(np.uint8))
-            print(prob_posi[i])
+            print(truth_posi[i])
             while(1):
                 key = cv2.waitKey(30)
                 if key ==32:break       # space
