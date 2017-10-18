@@ -35,6 +35,11 @@ def new_area(num, nptype, shapes):
             ).reshape(
                 -1,shapes[1],shapes[2],shapes[3]
             )
+    elif len(shapes) == 1:
+        image = np.zeros(
+                num,
+                dtype=nptype
+            )
     return image
 
 # PASS:1
@@ -79,6 +84,15 @@ print 'truth_nega.shape',truth_nega.shape
 truth_ambi = new_area(image_ambiN, np.int32, truth_posi_shape)
 print 'truth_ambi.shape',truth_ambi.shape
 
+path_posi = new_area(image_posiN, np.dtype('U256'), (0,))
+print 'path_posi.shape',path_posi.shape
+
+path_nega = new_area(image_negaN, np.dtype('U256'), (0,))
+print 'path_nega.shape',path_nega.shape
+
+path_ambi = new_area(image_ambiN, np.dtype('U256'), (0,))
+print 'path_ambi.shape',path_ambi.shape
+
 print('\n# PASS:2')
 image_posiN=0
 image_negaN=0
@@ -86,6 +100,9 @@ image_ambiN=0
 truth_posiN=0
 truth_negaN=0
 truth_ambiN=0
+path_posiN =0
+path_negaN =0
+path_ambiN =0
 for f in files:
     image = readpkl(f)
     if image is None:
@@ -118,9 +135,22 @@ for f in files:
                 num=len(image[k])
                 truth_ambi[truth_ambiN:truth_ambiN+num]=image[k].copy()
                 truth_ambiN+=num
+            elif k == 'path_posi':
+                num=len(image[k])
+                path_posi[path_posiN:path_posiN+num]=image[k].copy()
+                path_posiN+=num
+            elif k == 'path_nega':
+                num=len(image[k])
+                path_nega[path_negaN:path_negaN+num]=image[k].copy()
+                path_negaN+=num
+            elif k == 'path_ambi':
+                num=len(image[k])
+                path_ambi[path_ambiN:path_ambiN+num]=image[k].copy()
+                path_ambiN+=num
 
 print('image posiN/negaN/ambiN = %d/%d/%d'%(image_posiN,image_negaN,image_ambiN))
 print('truth posiN/negaN/ambiN = %d/%d/%d'%(truth_posiN,truth_negaN,truth_ambiN))
+print('path  posiN/negaN/ambiN = %d/%d/%d'%(path_posiN ,path_negaN ,path_ambiN))
 
 print('\n# STATISTICS NEGA/POSI TRUTH BY 1.0/0.0')
 truth_posi_zeros = len(truth_posi[truth_posi==0.])
@@ -201,45 +231,53 @@ print 'x2_nega :' ,x2_nega
 print 'X1_posi :' ,X1_posi
 print 'X2_nega :' ,X2_nega
 
-train_nonz = np.count_nonzero(truth_posi[p1_train])
-train_zero = np.prod(truth_nega[n1_train].shape) + np.prod(truth_posi[p1_train].shape) - train_nonz
-train_diff = int((train_nonz - train_zero)/truth_nega.shape[1])
-print('train nonz/zero(trimNegaImages)=%d/%d/%d'%(train_nonz,train_zero,train_diff))
+#train_nonz = np.count_nonzero(truth_posi[p1_train])
+#train_zero = np.prod(truth_nega[n1_train].shape) + np.prod(truth_posi[p1_train].shape) - train_nonz
+#train_diff = int((train_nonz - train_zero)/truth_nega.shape[1])
+#print('train nonz/zero(trimNegaImages)=%d/%d/%d'%(train_nonz,train_zero,train_diff))
 
-test_nonz = np.count_nonzero(truth_posi[p2_test])
-test_zero = np.prod(truth_nega[n2_test].shape)
-test_diff = int((test_nonz - test_zero)/truth_nega.shape[1])
-print('test  nonz/zero(trimNegaImages)=%d/%d/%d'%(test_nonz,test_zero,test_diff))
+#test_nonz = np.count_nonzero(truth_posi[p2_test])
+#test_zero = np.prod(truth_nega[n2_test].shape)
+#test_diff = int((test_nonz - test_zero)/truth_nega.shape[1])
+#print('test  nonz/zero(trimNegaImages)=%d/%d/%d'%(test_nonz,test_zero,test_diff))
 
 # total areas
 train_image = new_area(using_trainN, np.uint8, image_posi.shape)
 train_truth = new_area(using_trainN, np.int32, truth_posi.shape)
 test_image  = new_area(using_testN , np.uint8, image_posi.shape)
 test_truth  = new_area(using_testN , np.int32, truth_posi.shape)
+train_path  = new_area(using_trainN, np.dtype('U256'), (0,))
+test_path   = new_area(using_testN , np.dtype('U256'), (0,))
 
 # Coping
 train_image[x1_posi] = image_posi[p1_train]
 train_image[x2_nega] = image_nega[n1_train]
 train_truth[x1_posi] = truth_posi[p1_train]
 train_truth[x2_nega] = truth_nega[n1_train]
+train_path[x1_posi]  = path_posi[p1_train]
+train_path[x2_nega]  = path_nega[n1_train]
 
 test_image[X1_posi]  = image_posi[p2_test]
 test_image[X2_nega]  = image_nega[n2_test]
 test_truth[X1_posi]  = truth_posi[p2_test]
 test_truth[X2_nega]  = truth_nega[n2_test]
+test_path[X1_posi]   = path_posi[p2_test]
+test_path[X2_nega]   = path_nega[n2_test]
 
 print 'train_image.shape :', train_image.shape
 print 'train_truth.shape :', train_truth.shape
 print 'test_image.shape  :', test_image.shape
 print 'test_truth.shape  :', test_truth.shape
+
+print('\n# STATISTICS')
 train_nonz = np.count_nonzero(train_truth)
 train_alls = np.prod(train_truth.shape)
 nonz_ratio = float(train_nonz)/float(train_alls)
-print('train data nonzero/all ratio = %d/%d = %5.2f'%(train_nonz, train_alls, 100.*nonz_ratio))
+print('train data box-wise nonzero/all ratio = %d/%d = %5.2f'%(train_nonz, train_alls, 100.*nonz_ratio))
 test_nonz = np.count_nonzero(test_truth)
 test_alls = np.prod(test_truth.shape)
 nonz_ratio = float(test_nonz)/float(test_alls)
-print('test  data nonzero/all ratio = %d/%d = %5.2f'%(test_nonz, test_alls, 100.*nonz_ratio))
+print('test  data box-wise nonzero/all ratio = %d/%d = %5.2f'%(test_nonz, test_alls, 100.*nonz_ratio))
 
 print('\n# SAVING')
 with open('image.pkl','wb') as f:
