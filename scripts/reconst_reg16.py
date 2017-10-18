@@ -42,6 +42,16 @@ def new_area(num, nptype, shapes):
             )
     return image
 
+def path_summary(path):
+    summary=dict()
+    for p in path:
+        root_path = os.path.split(p)[0]
+        if root_path in summary.keys():
+            summary[root_path]+=1
+        else:
+            summary[root_path]=1
+    return summary
+
 # PASS:1
 print('\n# PASS:1')
 image_posiN=0
@@ -231,16 +241,6 @@ print 'x2_nega :' ,x2_nega
 print 'X1_posi :' ,X1_posi
 print 'X2_nega :' ,X2_nega
 
-#train_nonz = np.count_nonzero(truth_posi[p1_train])
-#train_zero = np.prod(truth_nega[n1_train].shape) + np.prod(truth_posi[p1_train].shape) - train_nonz
-#train_diff = int((train_nonz - train_zero)/truth_nega.shape[1])
-#print('train nonz/zero(trimNegaImages)=%d/%d/%d'%(train_nonz,train_zero,train_diff))
-
-#test_nonz = np.count_nonzero(truth_posi[p2_test])
-#test_zero = np.prod(truth_nega[n2_test].shape)
-#test_diff = int((test_nonz - test_zero)/truth_nega.shape[1])
-#print('test  nonz/zero(trimNegaImages)=%d/%d/%d'%(test_nonz,test_zero,test_diff))
-
 # total areas
 train_image = new_area(using_trainN, np.uint8, image_posi.shape)
 train_truth = new_area(using_trainN, np.int32, truth_posi.shape)
@@ -263,6 +263,14 @@ test_truth[X1_posi]  = truth_posi[p2_test]
 test_truth[X2_nega]  = truth_nega[n2_test]
 test_path[X1_posi]   = path_posi[p2_test]
 test_path[X2_nega]   = path_nega[n2_test]
+
+train_summary = path_summary(train_path)
+for k in train_summary.keys():
+    print('train images/path = %10d :%s'%(train_summary[k],k))
+
+test_summary = path_summary(test_path)
+for k in test_summary.keys():
+    print('test  images/path = %10d :%s'%(test_summary[k],k))
 
 print 'train_image.shape :', train_image.shape
 print 'train_truth.shape :', train_truth.shape
