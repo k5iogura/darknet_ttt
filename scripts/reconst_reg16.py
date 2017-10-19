@@ -3,18 +3,20 @@ import numpy as np
 import os
 import sys
 import argparse
+import fnmatch
+from pdb import *
 
 files = ['voc_ds.pkl', 'lfw_ds.pkl', 'indoorCVPR_09_ds.pkl']
 
 parser = argparse.ArgumentParser(description='check Original dataset and annotation into pickle')
 parser.add_argument('--ds_file', '-d', type=str, default='voc_ds.pkl')
+parser.add_argument('--shuffle', '-s', action='store_true')
 args = parser.parse_args()
 
 
 def readpkl(f):
     if os.path.exists(f):
         with open(f,'rb') as fo:
-            print("reading:%s"%f)
             image=pickle.load(fo)
         return image
     else:
@@ -46,11 +48,19 @@ def path_summary(path):
     summary=dict()
     for p in path:
         root_path = os.path.split(p)[0]
+        if fnmatch.fnmatch(root_path,'*lfw*'):root_path='lfw'
+        if fnmatch.fnmatch(root_path,'*indoorCVPR*'):root_path='indoorCVPR'
         if root_path in summary.keys():
             summary[root_path]+=1
         else:
             summary[root_path]=1
     return summary
+
+def shuffle(image, truth, path):
+    #np.random.seed(0)
+    #np.random.seed(22222)
+    idx = np.random.permutation(len(image))
+    return image[idx], truth[idx], path[idx]
 
 # PASS:1
 print('\n# PASS:1')
@@ -63,7 +73,6 @@ for f in files:
         print('Warning: %s not found, skip.'%f)
         continue
     else:
-        print('->analizing %s.'%f)
         for k in image.keys():
             if str(k) == 'image_posi':
                 image_posiN+=len(image[k])
@@ -73,6 +82,7 @@ for f in files:
                 image_ambiN+=len(image[k])
             elif k == 'truth_posi':
                 truth_posi_shape=image[k].shape
+        print('read posi/nega/ambi = %10d/%10d/%10d images after %s file'%(image_posiN,image_negaN,image_ambiN,f))
 print('posiN/negaN/ambiN = %d/%d/%d'%(image_posiN,image_negaN,image_ambiN))
 
 print('\n# SETUP TOTAL AREA')
@@ -148,15 +158,28 @@ for f in files:
             elif k == 'path_posi':
                 num=len(image[k])
                 path_posi[path_posiN:path_posiN+num]=image[k].copy()
+            #    for i in range(path_posiN,path_posiN+num):
+            #        if path_posi[i]=='':set_trace()
                 path_posiN+=num
             elif k == 'path_nega':
                 num=len(image[k])
                 path_nega[path_negaN:path_negaN+num]=image[k].copy()
+            #    for i in range(path_negaN,path_negaN+num):
+            #        if path_nega[i]=='':set_trace()
                 path_negaN+=num
             elif k == 'path_ambi':
                 num=len(image[k])
                 path_ambi[path_ambiN:path_ambiN+num]=image[k].copy()
+            #    for i in range(path_ambiN,path_ambiN+num):
+            #        if path_ambi[i]=='':set_trace()
                 path_ambiN+=num
+
+# SHUFFLE
+if args.shuffle:
+    print('\n# SHUFFLE')
+    image_posi, truth_posi, path_posi = shuffle(image_posi,truth_posi,path_posi)
+    image_nega, truth_nega, path_nega = shuffle(image_nega,truth_nega,path_nega)
+    image_ambi, truth_ambi, path_ambi = shuffle(image_ambi,truth_ambi,path_ambi)
 
 print('image posiN/negaN/ambiN = %d/%d/%d'%(image_posiN,image_negaN,image_ambiN))
 print('truth posiN/negaN/ambiN = %d/%d/%d'%(truth_posiN,truth_negaN,truth_ambiN))
@@ -264,14 +287,6 @@ test_truth[X2_nega]  = truth_nega[n2_test]
 test_path[X1_posi]   = path_posi[p2_test]
 test_path[X2_nega]   = path_nega[n2_test]
 
-train_summary = path_summary(train_path)
-for k in train_summary.keys():
-    print('train images/path = %10d :%s'%(train_summary[k],k))
-
-test_summary = path_summary(test_path)
-for k in test_summary.keys():
-    print('test  images/path = %10d :%s'%(test_summary[k],k))
-
 print 'train_image.shape :', train_image.shape
 print 'train_truth.shape :', train_truth.shape
 print 'test_image.shape  :', test_image.shape
@@ -286,6 +301,16 @@ test_nonz = np.count_nonzero(test_truth)
 test_alls = np.prod(test_truth.shape)
 nonz_ratio = float(test_nonz)/float(test_alls)
 print('test  data box-wise nonzero/all ratio = %d/%d = %5.2f'%(test_nonz, test_alls, 100.*nonz_ratio))
+
+train_summary = path_summary(train_path)
+for k in train_summary.keys():
+    if train_summary[k]>10:
+        print('train images/path = %10d :%s'%(train_summary[k],k))
+
+test_summary = path_summary(test_path)
+for k in test_summary.keys():
+    if test_summary[k]>10:
+        print('test  images/path = %10d :%s'%(test_summary[k],k))
 
 print('\n# SAVING')
 with open('image.pkl','wb') as f:
