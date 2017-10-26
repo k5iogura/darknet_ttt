@@ -10,7 +10,7 @@ files = ['voc_ds.pkl', 'lfw_ds.pkl', 'indoorCVPR_09_ds.pkl']
 
 parser = argparse.ArgumentParser(description='check Original dataset and annotation into pickle')
 parser.add_argument('--ds_file', '-d', type=str, default='voc_ds.pkl')
-parser.add_argument('--shuffle', '-s', action='store_true')
+parser.add_argument('--no_shuffle', '-ns', action='store_false')
 args = parser.parse_args()
 
 
@@ -175,11 +175,13 @@ for f in files:
                 path_ambiN+=num
 
 # SHUFFLE
-if args.shuffle:
+if args.no_shuffle is True:
     print('\n# SHUFFLE')
     image_posi, truth_posi, path_posi = shuffle(image_posi,truth_posi,path_posi)
     image_nega, truth_nega, path_nega = shuffle(image_nega,truth_nega,path_nega)
     image_ambi, truth_ambi, path_ambi = shuffle(image_ambi,truth_ambi,path_ambi)
+else:
+    print('\n# PERMUTATION BY NO-SHUFFLE OPETION')
 
 print('image posiN/negaN/ambiN = %d/%d/%d'%(image_posiN,image_negaN,image_ambiN))
 print('truth posiN/negaN/ambiN = %d/%d/%d'%(truth_posiN,truth_negaN,truth_ambiN))

@@ -95,10 +95,12 @@ if __name__ == '__main__':
         if args.nega is False:
             image_posi[image_posiN] = img_bgr_cw0
             truth_posi[image_posiN]  = truth_const
+            path_posi[image_posiN]  = jpg
             image_posiN+=1
         else:
             image_nega[image_negaN] = img_bgr_cw0
             truth_nega[image_negaN]  = truth_const
+            path_nega[image_negaN]  = jpg
             image_negaN+=1
         counter+=1
         if counter%200 == 0:print("Processing %d/%d"%(counter,max_count))
@@ -115,8 +117,8 @@ if __name__ == '__main__':
             'truth_nega':truth_nega[:image_negaN],
             'truth_ambi':truth_ambi[:image_ambiN],
             'path_posi':path_posi[:image_posiN],
-            'path_nega':path_posi[:image_negaN],
-            'path_ambi':path_posi[:image_ambiN]
+            'path_nega':path_nega[:image_negaN],
+            'path_ambi':path_ambi[:image_ambiN]
             }
         with open(pkl_image_file,'wb') as f:
             pickle.dump(image_buf,f)
