@@ -50,6 +50,8 @@ def convert_annotation(year, image_id):
         b = (float(xmlbox.find('xmin').text), float(xmlbox.find('xmax').text), float(xmlbox.find('ymin').text), float(xmlbox.find('ymax').text))
         B=(int(xmlbox.find('xmin').text),int(xmlbox.find('xmax').text),int(xmlbox.find('ymin').text),int(xmlbox.find('ymax').text))
         bb = convert((w,h), b)
+        xbox = int(((b[0]+b[1])/2.0)/(w/DIVISIONS))
+        ybox = int(((b[2]+b[3])/2.0)/(h/DIVISIONS))
         xp = int(round(b[0]/w/DIV_RATE,1))
         xq = int(round(b[1]/w/DIV_RATE,1))
         yp = int(round(b[2]/h/DIV_RATE,1))
@@ -65,6 +67,8 @@ def convert_annotation(year, image_id):
             if DEBUG1:print("")
         else:
             rejP+=1
+        if TRUTH_CENTER:
+            Gtruth[ybox][xbox] = 1.
         if DEBUG1:cv2.rectangle(img,(B[0],B[2]),(B[1],B[3]),(255,0,255),8)
     # write out into check file for debug
     for j in range(0,DIVISIONS):
@@ -100,6 +104,7 @@ if __name__ == '__main__':
     parser.add_argument('--max_count',  '-m', type=int, default=200)
     parser.add_argument('--nn_in_size',       type=int, default=32)
     parser.add_argument('--min_patch',        type=int, default=128)
+    parser.add_argument('--truth_center','-tc',action="store_true")
     args = parser.parse_args()
 
     voc_image_file = args.image_file
@@ -107,6 +112,9 @@ if __name__ == '__main__':
     if args.debug1:DEBUG1=True
     DEBUG2=False
     if args.debug2:DEBUG2=True
+
+    TRUTH_CENTER = False
+    if args.truth_center:TRUTH_CENTER=True
 
     DIVISIONS=4
     DIV_RATE=(1./DIVISIONS+0.01)

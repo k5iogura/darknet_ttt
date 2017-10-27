@@ -11,6 +11,7 @@ files = ['voc_ds.pkl', 'lfw_ds.pkl', 'indoorCVPR_09_ds.pkl']
 parser = argparse.ArgumentParser(description='check Original dataset and annotation into pickle')
 parser.add_argument('--ds_file', '-d', type=str, default='voc_ds.pkl')
 parser.add_argument('--no_shuffle', '-ns', action='store_false')
+parser.add_argument('--use_nega_all','-una',action="store_true")
 args = parser.parse_args()
 
 
@@ -61,6 +62,9 @@ def shuffle(image, truth, path):
     #np.random.seed(22222)
     idx = np.random.permutation(len(image))
     return image[idx], truth[idx], path[idx]
+
+TRUTH_CENTER = False
+if args.truth_center:TRUTH_CENTER=True
 
 # PASS:1
 print('\n# PASS:1')
@@ -199,7 +203,9 @@ print('truth nega 1.0/0.0=%8d/%8d'%(truth_nega_nonzs,truth_nega_zeros))
 print('truth ambi 1.0/0.0=%8d/%8d'%(truth_ambi_nonzs,truth_ambi_zeros))
 
 using_posi = image_posiN
-using_nega = int(truth_posi_nonzs / truth_posi.shape[1] - truth_posi_zeros / truth_posi.shape[1])
+using_nega = int((truth_posi_nonzs / truth_posi.shape[1] - truth_posi_zeros / truth_posi.shape[1]))
+if TRUTH_CENTER:
+    using_nega = image_negaN
 print('Usable leaning images is using_posi/using_nega = %d/%d'%(using_posi,using_nega))
 
 using_posi_test = int(using_posi/10)

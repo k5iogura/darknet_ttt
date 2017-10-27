@@ -20,6 +20,7 @@ if __name__ == '__main__':
     parser.add_argument('--max_count',  '-m', type=int, default=0)
     parser.add_argument('--nn_in_size',       type=int, default=32)
     parser.add_argument('--min_patch',        type=int, default=128)
+    parser.add_argument('--truth_center','-tc',action="store_true")
     args = parser.parse_args()
 
     pkl_image_file = '%s_%s'%(args.dataset_prefix,args.image_file)
@@ -27,6 +28,9 @@ if __name__ == '__main__':
 
     DEBUG1=False
     if args.debug1:DEBUG1=True
+
+    TRUTH_CENTER = False
+    if args.truth_center:TRUTH_CENTER=True
 
     DIVISIONS=4
     DIV_RATE=(1./DIVISIONS+0.01)
@@ -83,7 +87,11 @@ if __name__ == '__main__':
     if args.nega:
         truth_const  = np.array([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],dtype=np.float32)
     else:
-        truth_const  = np.array([0,1,1,0,0,1,1,0,0,1,1,0,1,1,1,1],dtype=np.float32)
+        if TRUTH_CENTER:
+            truth_const  = np.array([0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0],dtype=np.float32)
+        else:
+            truth_const  = np.array([0,1,1,0,0,1,1,0,0,1,1,0,1,1,1,1],dtype=np.float32)
+            truth_const  = np.array([0,0,0,0,0,1,1,0,0,1,1,0,0,0,0,0],dtype=np.float32)
     for jpg in files:
         img = cv2.imread(jpg)
         if img is None: continue
