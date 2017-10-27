@@ -1096,6 +1096,15 @@ void demo_classifier(char *datacfg, char *cfgfile, char *weightfile, int cam_ind
 #else
         if(!clear_image)
             cvThreshold(cvQF_src,cvQF_src,60,120,CV_THRESH_TRUNC);
+		if(predictions){
+			int bar_h=cvQF_h*predictions[1];
+			bar_h=(bar_h<5.0)? 5.0:bar_h;
+			bar_h=(bar_h> cvQF_h)? cvQF_h:bar_h;
+			if(clear_image)
+				cvLine(cvQF_src,cvPoint(5,cvQF_h),cvPoint(5,cvQF_h-bar_h),CV_RGB(255,255,0),5,8,0);
+			else
+				cvLine(cvQF_src,cvPoint(5,cvQF_h),cvPoint(5,cvQF_h-bar_h),CV_RGB(0,255,255),5,8,0);
+		}
         char textb[128];
         sprintf(textb,"%7.2fFPS",1000000.f/predict_usec);
         cvPutText(cvQF_src,textb,cvPoint(cvQF_w/2,cvQF_h/2),&font,CV_RGB(255,0,0));
