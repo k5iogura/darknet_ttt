@@ -73,13 +73,23 @@ if __name__ == '__main__':
     path_nega  = path_posi.copy()
     path_ambi  = path_posi.copy()
 
-    truth_posi = np.zeros(
-            max_count * DIVISIONS * DIVISIONS,
-            dtype=np.int32
-        ).reshape(
-            max_count,
-            DIVISIONS * DIVISIONS
-        )
+    if TRUTH_MANHAT:
+        truth_posi = np.zeros(
+                2 * max_count * DIVISIONS * DIVISIONS,
+                dtype=np.float32
+            ).reshape(
+                max_count,
+                2,
+                DIVISIONS * DIVISIONS
+            )
+    else:
+        truth_posi = np.zeros(
+                max_count * DIVISIONS * DIVISIONS,
+                dtype=np.int32
+            ).reshape(
+                max_count,
+                DIVISIONS * DIVISIONS
+            )
     truth_nega = truth_posi.copy()
     truth_ambi = truth_posi.copy()
 
@@ -94,7 +104,12 @@ if __name__ == '__main__':
     else:
         if TRUTH_CENTER:
             if TRUTH_MANHAT:
-                truth_const  = np.array([0,0,0,0,0,0,0,0,0,2,2,0,0,0,0,0],dtype=np.float32)
+                truth_const  = np.array(
+                    [
+                        [0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0],
+                        [0,0,0,0,0,0,0,0,0,0.5,0.5,0,0,0,0,0]
+                    ],    dtype=np.float32
+                )
             else:
                 truth_const  = np.array([0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0],dtype=np.float32)
         else:
@@ -110,12 +125,18 @@ if __name__ == '__main__':
         img_bgr_cw0[2] = img_rgb_cw1[0]
         if args.nega is False:
             image_posi[image_posiN] = img_bgr_cw0
-            truth_posi[image_posiN]  = truth_const
+            if TRUTH_MANHAT:
+                truth_posi[:][image_posiN]  = truth_const
+            else:
+                truth_posi[image_posiN]  = truth_const
             path_posi[image_posiN]  = jpg
             image_posiN+=1
         else:
             image_nega[image_negaN] = img_bgr_cw0
-            truth_nega[image_negaN]  = truth_const
+            if TRUTH_MANHAT:
+                truth_nega[:][image_negaN]  = truth_const
+            else:
+                truth_nega[image_negaN]  = truth_const
             path_nega[image_negaN]  = jpg
             image_negaN+=1
         counter+=1
@@ -125,17 +146,30 @@ if __name__ == '__main__':
     if counter > 0:
 
         # write global area out
-        image_buf={
-            'image_posi':image_posi[:image_posiN],
-            'image_nega':image_nega[:image_negaN],
-            'image_ambi':image_ambi[:image_ambiN],
-            'truth_posi':truth_posi[:image_posiN],
-            'truth_nega':truth_nega[:image_negaN],
-            'truth_ambi':truth_ambi[:image_ambiN],
-            'path_posi':path_posi[:image_posiN],
-            'path_nega':path_nega[:image_negaN],
-            'path_ambi':path_ambi[:image_ambiN]
-            }
+        if TRUTH_MANHAT:
+            image_buf={
+                'image_posi':image_posi[:image_posiN],
+                'image_nega':image_nega[:image_negaN],
+                'image_ambi':image_ambi[:image_ambiN],
+                'truth_posi':truth_posi[:][:image_posiN],
+                'truth_nega':truth_nega[:][:image_negaN],
+                'truth_ambi':truth_ambi[:][:image_ambiN],
+                'path_posi':path_posi[:image_posiN],
+                'path_nega':path_nega[:image_negaN],
+                'path_ambi':path_ambi[:image_ambiN]
+                }
+        else:
+            image_buf={
+                'image_posi':image_posi[:image_posiN],
+                'image_nega':image_nega[:image_negaN],
+                'image_ambi':image_ambi[:image_ambiN],
+                'truth_posi':truth_posi[:image_posiN],
+                'truth_nega':truth_nega[:image_negaN],
+                'truth_ambi':truth_ambi[:image_ambiN],
+                'path_posi':path_posi[:image_posiN],
+                'path_nega':path_nega[:image_negaN],
+                'path_ambi':path_ambi[:image_ambiN]
+                }
         with open(pkl_image_file,'wb') as f:
             pickle.dump(image_buf,f)
         print('%s include %d image files (posi/nega/ambi=%d/%d/%d)'%(pkl_image_file,counter,image_posiN,image_negaN,image_ambiN))
@@ -150,7 +184,7 @@ if __name__ == '__main__':
     if DEBUG1:
         for i in range(10,15):
             cv2.imshow('return image', image_posi[i].transpose(2,1,0).astype(np.uint8))
-            print(truth_posi[i])
+            #print(truth_posi[i])
             while(1):
                 key = cv2.waitKey(30)
                 if key ==32:break       # space
