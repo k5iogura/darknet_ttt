@@ -32,7 +32,7 @@ def convert_annotation(year, image_id):
     posN=0
     rejP=0
     in_file = open('VOCdevkit/VOC%s/Annotations/%s.xml'%(year, image_id))
-    out_file = open('VOCdevkit/VOC%s/labels/%s.txt'%(year, image_id), 'w')
+    #out_file = open('VOCdevkit/VOC%s/labels/%s.txt'%(year, image_id), 'w')
     img = cv2.imread('VOCdevkit/VOC%s/JPEGImages/%s.jpg'%(year, image_id))
     tree=ET.parse(in_file)
     root = tree.getroot()
@@ -40,7 +40,10 @@ def convert_annotation(year, image_id):
     w = int(size.find('width').text)
     h = int(size.find('height').text)
 
-    Gtruth = np.zeros(16,dtype=np.float32).reshape(4,4)
+    if TRUTH_MANHAT:
+        Gtruth = np.zeros((2,16),dtype=np.float32).reshape(-1,4,4)
+    else:
+        Gtruth = np.zeros(16,dtype=np.float32).reshape(4,4)
     for obj in root.iter('object'):
         difficult = obj.find('difficult').text
         cls = obj.find('name').text
@@ -63,8 +66,8 @@ def convert_annotation(year, image_id):
             if TRUTH_CENTER:
                 if TRUTH_MANHAT:
                     mR = int(DIVISIONS*min(bb[2],bb[3]))+1
-                    Gtruth[ybox][xbox] = mR
-                #    Gtruth = manhattanCircle(Gtruth.reshape(-1,4,4).astype(dtype=np.int32)).astype(dtype=np.float32)
+                    Gtruth[1][ybox][xbox] = mR/float(DIVISIONS)
+                    Gtruth[0][ybox][xbox] = 1.
                 else:
                     Gtruth[ybox][xbox] = 1.
             else:
@@ -75,10 +78,10 @@ def convert_annotation(year, image_id):
             rejP+=1
         if DEBUG1:cv2.rectangle(img,(B[0],B[2]),(B[1],B[3]),(255,0,255),8)
     # write out into check file for debug
-    for j in range(0,DIVISIONS):
-        for i in range(0,DIVISIONS):
-            out_file.write(str("%2d "%(Gtruth[i][j])))
-    out_file.write("\n")
+    #for j in range(0,DIVISIONS):
+    #    for i in range(0,DIVISIONS):
+    #        out_file.write(str("%2d "%(Gtruth[i][j])))
+    #out_file.write("\n")
     # swap RGB Pixel-Wise to BGR Channel-Wise and save global area
     img_pw_rgb = cv2.resize(img,(NN_IN_SIZE,NN_IN_SIZE))
     img_cw_bgr0=img_pw_rgb.transpose(2,1,0).copy()
@@ -86,7 +89,10 @@ def convert_annotation(year, image_id):
     img_cw_bgr0[0]=img_cw_bgr1[2]
     img_cw_bgr0[2]=img_cw_bgr1[0]
     # save global area
-    truth  = Gtruth.reshape(DIVISIONS*DIVISIONS)
+    if TRUTH_MANHAT:
+        truth  = Gtruth.reshape(2,DIVISIONS*DIVISIONS)
+    else:
+        truth  = Gtruth.reshape(DIVISIONS*DIVISIONS)
     #if DEBUG1:img = cv2.resize(img,(w,h))
     if DEBUG1:img = cv2.resize(img_cw_bgr0.transpose(2,1,0),(w,h))
     if DEBUG1:cv2.imshow('%s'%(image_id),img)
@@ -97,7 +103,7 @@ def convert_annotation(year, image_id):
             if key == 32: break         # space
     if DEBUG1:cv2.destroyAllWindows()
     in_file.close()
-    out_file.close()
+    #out_file.close()
     return posN, rejP, img_cw_bgr0, truth
 
 if __name__ == '__main__':
@@ -150,13 +156,23 @@ if __name__ == '__main__':
     path_nega = path_posi.copy()
     path_ambi = path_posi.copy()
 
-    truth_posi = np.zeros(
-            max_count * DIVISIONS * DIVISIONS,
-            dtype=np.int32
-        ).reshape(
-            max_count,
-            DIVISIONS * DIVISIONS
-        )
+    if TRUTH_MANHAT:
+        truth_posi = np.zeros(
+                2 * max_count * DIVISIONS * DIVISIONS,
+                dtype=np.float32
+            ).reshape(
+                max_count,
+                2,
+                DIVISIONS * DIVISIONS
+            )
+    else:
+        truth_posi = np.zeros(
+                max_count * DIVISIONS * DIVISIONS,
+                dtype=np.int32
+            ).reshape(
+                max_count,
+                DIVISIONS * DIVISIONS
+            )
     truth_nega = truth_posi.copy()
     truth_ambi = truth_posi.copy()
 
@@ -177,17 +193,26 @@ if __name__ == '__main__':
             posN, rejP, image, truth = convert_annotation(year, image_id)
             if posN>0 and posN!=rejP:
                 image_posi[image_posiN] = image.copy()
-                truth_posi[image_posiN] = truth.copy()
+                if TRUTH_MANHAT:
+                    truth_posi[:][image_posiN] = truth.copy()
+                else:
+                    truth_posi[image_posiN] = truth.copy()
                 path_posi[image_posiN]  = file_name
                 image_posiN+=1
             elif posN==0 and rejP==0:
                 image_nega[image_negaN] = image.copy()
-                truth_nega[image_negaN] = truth.copy()
+                if TRUTH_MANHAT:
+                    truth_nega[:][image_negaN] = truth.copy()
+                else:
+                    truth_nega[image_negaN] = truth.copy()
                 path_nega[image_negaN]  = file_name
                 image_negaN+=1
             else:
                 image_ambi[image_ambiN] = image.copy()
-                truth_ambi[image_ambiN] = truth.copy()
+                if TRUTH_MANHAT:
+                    truth_ambi[:][image_ambiN] = truth.copy()
+                else:
+                    truth_ambi[image_ambiN] = truth.copy()
                 path_ambi[image_ambiN] = file_name
                 image_ambiN+=1
             counter+=1
@@ -232,17 +257,30 @@ if __name__ == '__main__':
 
     if counter > 0:
 
-        image_buf = {
-            'image_posi':image_posi[:image_posiN],
-            'image_nega':image_nega[:image_negaN],
-            'image_ambi':image_ambi[:image_ambiN],
-            'truth_posi':truth_posi[:image_posiN],
-            'truth_nega':truth_nega[:image_negaN],
-            'truth_ambi':truth_ambi[:image_ambiN],
-            'path_posi':path_posi[:image_posiN],
-            'path_nega':path_posi[:image_negaN],
-            'path_ambi':path_posi[:image_ambiN]
-            }
+        if TRUTH_MANHAT:
+            image_buf = {
+                'image_posi':image_posi[:image_posiN],
+                'image_nega':image_nega[:image_negaN],
+                'image_ambi':image_ambi[:image_ambiN],
+                'truth_posi':truth_posi[:][:image_posiN],
+                'truth_nega':truth_nega[:][:image_negaN],
+                'truth_ambi':truth_ambi[:][:image_ambiN],
+                'path_posi':path_posi[:image_posiN],
+                'path_nega':path_posi[:image_negaN],
+                'path_ambi':path_posi[:image_ambiN]
+                }
+        else:
+            image_buf = {
+                'image_posi':image_posi[:image_posiN],
+                'image_nega':image_nega[:image_negaN],
+                'image_ambi':image_ambi[:image_ambiN],
+                'truth_posi':truth_posi[:image_posiN],
+                'truth_nega':truth_nega[:image_negaN],
+                'truth_ambi':truth_ambi[:image_ambiN],
+                'path_posi':path_posi[:image_posiN],
+                'path_nega':path_posi[:image_negaN],
+                'path_ambi':path_posi[:image_ambiN]
+                }
         # write global area out
         with open(voc_image_file,'wb') as f:
             pickle.dump(image_buf,f)
