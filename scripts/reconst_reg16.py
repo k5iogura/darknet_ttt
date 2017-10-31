@@ -12,6 +12,7 @@ parser = argparse.ArgumentParser(description='check Original dataset and annotat
 parser.add_argument('--ds_file', '-d', type=str, default='voc_ds.pkl')
 parser.add_argument('--no_shuffle', '-ns', action='store_false')
 parser.add_argument('--use_nega_all','-una',action="store_true")
+parser.add_argument('--truth_center','-tc',action="store_true")
 args = parser.parse_args()
 
 

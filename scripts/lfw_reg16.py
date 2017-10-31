@@ -9,6 +9,7 @@ import sys
 import argparse
 import fnmatch
 from pdb import *
+from loss_custom import *
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Original dataset and annotation into pickle')
@@ -21,6 +22,7 @@ if __name__ == '__main__':
     parser.add_argument('--nn_in_size',       type=int, default=32)
     parser.add_argument('--min_patch',        type=int, default=128)
     parser.add_argument('--truth_center','-tc',action="store_true")
+    parser.add_argument('--truth_manhat','-tm',action="store_true")
     args = parser.parse_args()
 
     pkl_image_file = '%s_%s'%(args.dataset_prefix,args.image_file)
@@ -31,6 +33,9 @@ if __name__ == '__main__':
 
     TRUTH_CENTER = False
     if args.truth_center:TRUTH_CENTER=True
+
+    TRUTH_MANHAT = False
+    if args.truth_manhat:TRUTH_CENTER=TRUTH_MANHAT=True
 
     DIVISIONS=4
     DIV_RATE=(1./DIVISIONS+0.01)
@@ -88,7 +93,10 @@ if __name__ == '__main__':
         truth_const  = np.array([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],dtype=np.float32)
     else:
         if TRUTH_CENTER:
-            truth_const  = np.array([0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0],dtype=np.float32)
+            if TRUTH_MANHAT:
+                truth_const  = np.array([0,0,0,0,0,0,0,0,0,2,2,0,0,0,0,0],dtype=np.float32)
+            else:
+                truth_const  = np.array([0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0],dtype=np.float32)
         else:
             truth_const  = np.array([0,1,1,0,0,1,1,0,0,1,1,0,1,1,1,1],dtype=np.float32)
             truth_const  = np.array([0,0,0,0,0,1,1,0,0,1,1,0,0,0,0,0],dtype=np.float32)

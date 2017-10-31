@@ -8,6 +8,7 @@ import cv2
 import sys
 import argparse
 from pdb import *
+#from loss_custom import *
 
 sets=[('2012', 'train'), ('2012', 'val'), ('2007', 'train'), ('2007', 'val'), ('2007', 'test')]
 
@@ -59,16 +60,19 @@ def convert_annotation(year, image_id):
         if (b[1]-b[0])>=MIN_PATCH and (b[3]-b[2])>=MIN_PATCH:
             posN+=1
             if DEBUG1:print("%s %d %d %d %d : %d %d %d %d : %d %d"%(image_id,xp,xq,yp,yq,b[0],b[1],b[2],b[3],w,h))
-            for j in range(yp,yq+1):
-                for i in range(xp,xq+1):
-                    Gtruth[j][i]=1.
-                    if DEBUG1:sys.stdout.write("%2d-"%(j*DIVISIONS+i))
-                if DEBUG1:print("")
-            if DEBUG1:print("")
+            if TRUTH_CENTER:
+                if TRUTH_MANHAT:
+                    mR = int(DIVISIONS*min(bb[2],bb[3]))+1
+                    Gtruth[ybox][xbox] = mR
+                #    Gtruth = manhattanCircle(Gtruth.reshape(-1,4,4).astype(dtype=np.int32)).astype(dtype=np.float32)
+                else:
+                    Gtruth[ybox][xbox] = 1.
+            else:
+                for j in range(yp,yq+1):
+                    for i in range(xp,xq+1):
+                        Gtruth[j][i]=1.
         else:
             rejP+=1
-        if TRUTH_CENTER:
-            Gtruth[ybox][xbox] = 1.
         if DEBUG1:cv2.rectangle(img,(B[0],B[2]),(B[1],B[3]),(255,0,255),8)
     # write out into check file for debug
     for j in range(0,DIVISIONS):
@@ -105,6 +109,7 @@ if __name__ == '__main__':
     parser.add_argument('--nn_in_size',       type=int, default=32)
     parser.add_argument('--min_patch',        type=int, default=128)
     parser.add_argument('--truth_center','-tc',action="store_true")
+    parser.add_argument('--truth_manhat','-tm',action="store_true")
     args = parser.parse_args()
 
     voc_image_file = args.image_file
@@ -115,6 +120,9 @@ if __name__ == '__main__':
 
     TRUTH_CENTER = False
     if args.truth_center:TRUTH_CENTER=True
+
+    TRUTH_MANHAT = False
+    if args.truth_manhat:TRUTH_CENTER=TRUTH_MANHAT=True
 
     DIVISIONS=4
     DIV_RATE=(1./DIVISIONS+0.01)
