@@ -100,13 +100,24 @@ if __name__ == '__main__':
     image_ambiN=0
     counter=0
     if args.nega:
-        truth_const  = np.array([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],dtype=np.float32)
+        if TRUTH_CENTER:
+            if TRUTH_MANHAT:
+                truth_const  = np.array(
+                    [
+                        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+                    ],    dtype=np.float32
+                )
+            else:
+                truth_const  = np.array([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],dtype=np.float32)
+        else:
+            truth_const  = np.array([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],dtype=np.float32)
     else:
         if TRUTH_CENTER:
             if TRUTH_MANHAT:
                 truth_const  = np.array(
                     [
-                        [0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0],
+                        [0,0,0,0,0,0,0,0,0,1.0,1.0,0,0,0,0,0],
                         [0,0,0,0,0,0,0,0,0,0.5,0.5,0,0,0,0,0]
                     ],    dtype=np.float32
                 )
