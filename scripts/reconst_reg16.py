@@ -279,10 +279,10 @@ print 'X1_posi :' ,X1_posi
 print 'X2_nega :' ,X2_nega
 
 # total areas
-train_image = new_area(using_trainN, np.uint8, image_posi.shape)
-train_truth = new_area(using_trainN, np.int32, truth_posi.shape)
-test_image  = new_area(using_testN , np.uint8, image_posi.shape)
-test_truth  = new_area(using_testN , np.int32, truth_posi.shape)
+train_image = new_area(using_trainN, np.uint8,   image_posi.shape)
+train_truth = new_area(using_trainN, np.float32, truth_posi.shape)
+test_image  = new_area(using_testN , np.uint8,   image_posi.shape)
+test_truth  = new_area(using_testN , np.float32, truth_posi.shape)
 train_path  = new_area(using_trainN, np.dtype('U256'), (0,))
 test_path   = new_area(using_testN , np.dtype('U256'), (0,))
 
