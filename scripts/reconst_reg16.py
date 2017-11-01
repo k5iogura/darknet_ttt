@@ -111,13 +111,13 @@ print 'image_nega.shape',image_nega.shape
 image_ambi = new_area(image_ambiN, np.uint8, image['image_ambi'].shape)
 print 'image_ambi.shape',image_ambi.shape
 
-truth_posi = new_area(image_posiN, np.int32, truth_posi_shape)
+truth_posi = new_area(image_posiN, np.float32, truth_posi_shape)
 print 'truth_posi.shape',truth_posi.shape
 
-truth_nega = new_area(image_negaN, np.int32, truth_posi_shape)
+truth_nega = new_area(image_negaN, np.float32, truth_posi_shape)
 print 'truth_nega.shape',truth_nega.shape
 
-truth_ambi = new_area(image_ambiN, np.int32, truth_posi_shape)
+truth_ambi = new_area(image_ambiN, np.float32, truth_posi_shape)
 print 'truth_ambi.shape',truth_ambi.shape
 
 path_posi = new_area(image_posiN, np.dtype('U256'), (0,))
@@ -174,20 +174,14 @@ for f in files:
             elif k == 'path_posi':
                 num=len(image[k])
                 path_posi[path_posiN:path_posiN+num]=image[k].copy()
-            #    for i in range(path_posiN,path_posiN+num):
-            #        if path_posi[i]=='':set_trace()
                 path_posiN+=num
             elif k == 'path_nega':
                 num=len(image[k])
                 path_nega[path_negaN:path_negaN+num]=image[k].copy()
-            #    for i in range(path_negaN,path_negaN+num):
-            #        if path_nega[i]=='':set_trace()
                 path_negaN+=num
             elif k == 'path_ambi':
                 num=len(image[k])
                 path_ambi[path_ambiN:path_ambiN+num]=image[k].copy()
-            #    for i in range(path_ambiN,path_ambiN+num):
-            #        if path_ambi[i]=='':set_trace()
                 path_ambiN+=num
 
 # SHUFFLE
