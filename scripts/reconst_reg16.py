@@ -13,6 +13,7 @@ parser.add_argument('--ds_file', '-d', type=str, default='voc_ds.pkl')
 parser.add_argument('--no_shuffle', '-ns', action='store_false')
 parser.add_argument('--use_nega_all','-una',action="store_true")
 parser.add_argument('--truth_center','-tc',action="store_true")
+parser.add_argument('--truth_manhat','-tm',action="store_true")
 args = parser.parse_args()
 
 
@@ -31,6 +32,13 @@ def new_area(num, nptype, shapes):
                 dtype=nptype
             ).reshape(
                 -1,shapes[1]
+            )
+    elif len(shapes) == 3:
+        image = np.zeros(
+                num * np.prod(shapes[1:]),
+                dtype=nptype
+            ).reshape(
+                -1,shapes[1],shapes[2]
             )
     elif len(shapes) == 4:
         image = np.zeros(
@@ -66,6 +74,9 @@ def shuffle(image, truth, path):
 
 TRUTH_CENTER = False
 if args.truth_center:TRUTH_CENTER=True
+
+TRUTH_MANHAT = False
+if args.truth_manhat:TRUTH_MANHAT=TRUTH_CENTER=True
 
 # PASS:1
 print('\n# PASS:1')
@@ -205,7 +216,7 @@ print('truth ambi 1.0/0.0=%8d/%8d'%(truth_ambi_nonzs,truth_ambi_zeros))
 
 using_posi = image_posiN
 using_nega = int((truth_posi_nonzs / truth_posi.shape[1] - truth_posi_zeros / truth_posi.shape[1]))
-if TRUTH_CENTER:
+if TRUTH_CENTER or TRUTH_MANHAT:
     using_nega = image_negaN
 print('Usable leaning images is using_posi/using_nega = %d/%d'%(using_posi,using_nega))
 
