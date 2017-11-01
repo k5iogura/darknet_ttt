@@ -13,5 +13,6 @@ with open(args.ds_file,'rb') as f:
 print("Usable image ndarray")
 print(image.keys())
 
-for k in image.keys():
-    print("key=%s\t%d"%(k,len(image[k])))
+i=0
+for no,k in enumerate(image.keys()):
+    print("key=%s\t%d %s"%(k,len(image[k]),image[k].shape))
