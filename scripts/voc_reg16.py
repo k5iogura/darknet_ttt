@@ -111,7 +111,7 @@ if __name__ == '__main__':
     parser.add_argument('--debug1', action="store_true")
     parser.add_argument('--debug2', action="store_true")
     parser.add_argument('--image_file', '-i', type=str, default="voc_ds.pkl")
-    parser.add_argument('--max_count',  '-m', type=int, default=200)
+    parser.add_argument('--max_count',  '-m', type=int, default=30000)
     parser.add_argument('--nn_in_size',       type=int, default=32)
     parser.add_argument('--min_patch',        type=int, default=128)
     parser.add_argument('--truth_center','-tc',action="store_true")
