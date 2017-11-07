@@ -111,7 +111,7 @@ if __name__ == '__main__':
     parser.add_argument('--debug1', action="store_true")
     parser.add_argument('--debug2', action="store_true")
     parser.add_argument('--image_file', '-i', type=str, default="voc_ds.pkl")
-    parser.add_argument('--max_count',  '-m', type=int, default=200)
+    parser.add_argument('--max_count',  '-m', type=int, default=30000)
     parser.add_argument('--nn_in_size',       type=int, default=32)
     parser.add_argument('--min_patch',        type=int, default=128)
     parser.add_argument('--truth_center','-tc',action="store_true")
@@ -139,7 +139,7 @@ if __name__ == '__main__':
     if args.min_patch:MIN_PATCH=int(args.min_patch)
 
     img_count=0
-    max_count=4200
+    max_count=200
     if args.max_count: max_count=int(args.max_count)
     image_posi = np.zeros(
             max_count * NN_IN_SIZE * NN_IN_SIZE * NN_IN_CHNL,
@@ -266,8 +266,8 @@ if __name__ == '__main__':
                 'truth_nega':truth_nega[:][:image_negaN],
                 'truth_ambi':truth_ambi[:][:image_ambiN],
                 'path_posi':path_posi[:image_posiN],
-                'path_nega':path_posi[:image_negaN],
-                'path_ambi':path_posi[:image_ambiN]
+                'path_nega':path_nega[:image_negaN],
+                'path_ambi':path_ambi[:image_ambiN]
                 }
         else:
             image_buf = {
@@ -278,8 +278,8 @@ if __name__ == '__main__':
                 'truth_nega':truth_nega[:image_negaN],
                 'truth_ambi':truth_ambi[:image_ambiN],
                 'path_posi':path_posi[:image_posiN],
-                'path_nega':path_posi[:image_negaN],
-                'path_ambi':path_posi[:image_ambiN]
+                'path_nega':path_nega[:image_negaN],
+                'path_ambi':path_ambi[:image_ambiN]
                 }
         # write global area out
         with open(voc_image_file,'wb') as f:
