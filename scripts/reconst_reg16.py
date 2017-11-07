@@ -6,7 +6,7 @@ import argparse
 import fnmatch
 from pdb import *
 
-files = ['voc_ds.pkl', 'lfw_ds.pkl', 'indoorCVPR_09_ds.pkl']
+files = ['voc_ds.pkl', 'lfw_ds.pkl', 'indoorCVPR_09_ds.pkl','spatial_envelope_256x256_static_8outdoorcategories_ds.pkl']
 
 parser = argparse.ArgumentParser(description='check Original dataset and annotation into pickle')
 parser.add_argument('--ds_file', '-d', type=str, default='voc_ds.pkl')
@@ -14,6 +14,7 @@ parser.add_argument('--no_shuffle', '-ns', action='store_false')
 parser.add_argument('--use_nega_all','-una',action="store_true")
 parser.add_argument('--truth_center','-tc',action="store_true")
 parser.add_argument('--truth_manhat','-tm',action="store_true")
+parser.add_argument('--only_check',  '-oc',action="store_true")
 args = parser.parse_args()
 
 
@@ -326,21 +327,24 @@ for k in test_summary.keys():
     if test_summary[k]>10:
         print('test  images/path = %10d :%s'%(test_summary[k],k))
 
-print('\n# SAVING')
-with open('image.pkl','wb') as f:
-    print('  %s'%'image.pkl')
-    image_all = {
-        'train': train_image,
-        'test':  test_image
-        }
-    pickle.dump(image_all,f)
+if not args.only_check:
+    print('\n# SAVING')
+    with open('image.pkl','wb') as f:
+        print('  %s'%'image.pkl')
+        image_all = {
+            'train': train_image,
+            'test':  test_image
+            }
+        pickle.dump(image_all,f)
 
-with open('label.pkl','wb') as f:
-    print('  %s'%'label.pkl')
-    truth_all = {
-        'train': train_truth,
-        'test':  test_truth
-        }
-    pickle.dump(truth_all,f)
+    with open('label.pkl','wb') as f:
+        print('  %s'%'label.pkl')
+        truth_all = {
+            'train': train_truth,
+            'test':  test_truth
+            }
+        pickle.dump(truth_all,f)
+else:
+    print('check only, dont create pkl')
 
 sys.exit(1)
