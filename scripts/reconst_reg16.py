@@ -6,10 +6,10 @@ import argparse
 import fnmatch
 from pdb import *
 
-files = ['voc_ds.pkl', 'lfw_ds.pkl', 'indoorCVPR_09_ds.pkl','spatial_envelope_256x256_static_8outdoorcategories_ds.pkl']
+files = ['voc_ds.pkl', 'lfw_ds.pkl', 'indoorCVPR_09_ds.pkl']
 
 parser = argparse.ArgumentParser(description='check Original dataset and annotation into pickle')
-parser.add_argument('--ds_file', '-d', type=str, default='voc_ds.pkl')
+parser.add_argument('--ds_files',   '-d',  nargs='+',type=str)
 parser.add_argument('--no_shuffle', '-ns', action='store_false')
 parser.add_argument('--use_nega_all','-una',action="store_true")
 parser.add_argument('--truth_center','-tc',action="store_true")
@@ -17,6 +17,24 @@ parser.add_argument('--truth_manhat','-tm',action="store_true")
 parser.add_argument('--only_check',  '-oc',action="store_true")
 args = parser.parse_args()
 
+if args.ds_files:
+    for ds_file in args.ds_files:
+        if os.path.exists(ds_file):
+            files.append(ds_file)
+        else:
+            print('%s'%os.path.splitext(ds_file)[1])
+            print('append %s file not found'%ds_file)
+            sys.exit(1)
+check_file=0
+for ds_file in files:
+    if os.path.exists(ds_file):
+        print('OK: %s'%ds_file)
+    else:
+        print('NG: %s'%ds_file)
+        check_file+=1
+if check_file>0:
+    print('Any input ds files is NG')
+    sys.exit(1)
 
 def readpkl(f):
     if os.path.exists(f):
