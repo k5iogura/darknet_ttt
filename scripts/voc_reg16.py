@@ -84,8 +84,8 @@ def convert_annotation(year, image_id):
     #out_file.write("\n")
     # swap RGB Pixel-Wise to BGR Channel-Wise and save global area
     img_pw_rgb = cv2.resize(img,(NN_IN_SIZE,NN_IN_SIZE))
-    img_cw_bgr0=img_pw_rgb.transpose(2,1,0).copy()
-    img_cw_bgr1=img_pw_rgb.transpose(2,1,0).copy()
+    img_cw_bgr0=img_pw_rgb.transpose(2,0,1).copy()          # reform HWC to CHW
+    img_cw_bgr1=img_pw_rgb.transpose(2,0,1).copy()          # reform HWC to CHW
     img_cw_bgr0[0]=img_cw_bgr1[2]
     img_cw_bgr0[2]=img_cw_bgr1[0]
     # save global area
@@ -94,7 +94,7 @@ def convert_annotation(year, image_id):
     else:
         truth  = Gtruth.reshape(DIVISIONS*DIVISIONS)
     #if DEBUG1:img = cv2.resize(img,(w,h))
-    if DEBUG1:img = cv2.resize(img_cw_bgr0.transpose(2,1,0),(w,h))
+    if DEBUG1:img = cv2.resize(img_cw_bgr0.transpose(1,2,0),(w,h))  # reform CHW to HWC for Debug
     if DEBUG1:cv2.imshow('%s'%(image_id),img)
     if DEBUG1:
         while(1):
@@ -294,9 +294,10 @@ if __name__ == '__main__':
 
     if DEBUG2:
         for i in range(0,5):
-            posi=cv2.resize(image_buf['image_posi'][i].transpose(2,1,0).astype(np.uint8),(64,64))
-            nega=cv2.resize(image_buf['image_nega'][i].transpose(2,1,0).astype(np.uint8),(64,64))
-            ambi=cv2.resize(image_buf['image_ambi'][i].transpose(2,1,0).astype(np.uint8),(64,64))
+            S=args.nn_in_size
+            posi=cv2.resize(image_buf['image_posi'][i].transpose(2,0,1).astype(np.uint8),(S,S))
+            nega=cv2.resize(image_buf['image_nega'][i].transpose(2,0,1).astype(np.uint8),(S,S))
+            ambi=cv2.resize(image_buf['image_ambi'][i].transpose(2,0,1).astype(np.uint8),(S,S))
             cv2.imshow('return image posi', posi)
             cv2.imshow('return image nega', nega)
             cv2.imshow('return image ambi', ambi)

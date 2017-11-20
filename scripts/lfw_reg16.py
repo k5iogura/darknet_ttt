@@ -130,8 +130,8 @@ if __name__ == '__main__':
         img = cv2.imread(jpg)
         if img is None: continue
         img = cv2.resize(img,(NN_IN_SIZE,NN_IN_SIZE))
-        img_bgr_cw0=img.transpose(2,1,0).copy()
-        img_rgb_cw1=img.transpose(2,1,0).copy()
+        img_bgr_cw0=img.transpose(2,0,1).copy()         # reform HWC to CHW from pixelwise to RGB wise
+        img_rgb_cw1=img.transpose(2,0,1).copy()         # reform HWC to CHW
         img_bgr_cw0[0] = img_rgb_cw1[2]
         img_bgr_cw0[2] = img_rgb_cw1[0]
         if args.nega is False:
@@ -194,7 +194,7 @@ if __name__ == '__main__':
 
     if DEBUG1:
         for i in range(10,15):
-            cv2.imshow('return image', image_posi[i].transpose(2,1,0).astype(np.uint8))
+            cv2.imshow('return image', image_posi[i].transpose(1,2,0).astype(np.uint8)) # reform CHW to HWC
             #print(truth_posi[i])
             while(1):
                 key = cv2.waitKey(30)
