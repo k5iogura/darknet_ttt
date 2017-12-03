@@ -83,8 +83,7 @@ if __name__ == '__main__':
             label_id = re.sub('.jpg','.txt',image_id)
             w=open(label_id,'w')
             if args.nega is False:
-                w.write('14 0.45 0.6 0.8 0.8\n')
-                w.write('14 0.55 0.6 0.8 0.8\n')
+                w.write('14 0.50 0.5 0.5 0.5\n')
             w.close()
         list_file.close()
         if args.nega is False:
