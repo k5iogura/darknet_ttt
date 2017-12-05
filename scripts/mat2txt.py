@@ -90,7 +90,7 @@ for i in range(args.start,dataN):
     h,w,c = image.shape
     lx,ly,rx,ry = f_loc.astype(dtype=np.int)
     if h < ry or w < rx: continue
-    #if h > w: continue
+    if h > w+5: continue
     #if h <= w: continue
 
     cx,cy,aw,ah = convert((int(image.shape[1]),int(image.shape[0])),(lx,rx,ly,ry))
