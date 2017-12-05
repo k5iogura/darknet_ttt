@@ -41,6 +41,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument('mat',type=str)
 parser.add_argument('--view', '-v', action='store_true')
 parser.add_argument('--list_prefix', '-p', type=str, default='train')
+parser.add_argument('--shuffle', '-sh', action='store_true')
+parser.add_argument('--start', '-s', type=int, default=0)
 args = parser.parse_args()
 
 mat_key = os.path.basename(args.mat)
@@ -60,10 +62,19 @@ face_scores_2nd= meta[mat_key][0,0]['second_face_score'][0]
 dataN = len(full_paths)
 wdir  = str(os.getcwd())+'/'+os.path.dirname(args.mat)+'/'
 
+print('image data = %d'%(dataN))
 validN=0
+index = range(0,dataN)
+if args.shuffle is True:
+    index = np.random.permutation(dataN)
+    full_paths     =full_paths[index]
+    face_locations =face_locations[index]
+    face_scores    =face_scores[index]
+    face_scores_2nd=face_scores_2nd[index]
+
 if args.view is False:
     itxt = open(train_txt,'w')
-for i in range(0,dataN):
+for i in range(args.start,dataN):
     i_file  = wdir+str(full_paths[i][0])
     t_file  = re.sub('.jpg','.txt',i_file)
     t_file  = re.sub('.png','.txt',t_file)
@@ -73,14 +84,14 @@ for i in range(0,dataN):
     if not (score <10. and score >0.): continue
     if math.isnan(score):continue
     if math.isnan(score2nd) is False:continue
-    if math.isinf(score):print('inf score image')
-        
+
     image=read_i(i_file)
     if image is None:continue
     h,w,c = image.shape
     lx,ly,rx,ry = f_loc.astype(dtype=np.int)
     if h < ry or w < rx: continue
-    if h > w: continue
+    #if h > w: continue
+    #if h <= w: continue
 
     cx,cy,aw,ah = convert((int(image.shape[1]),int(image.shape[0])),(lx,rx,ly,ry))
     if args.view is False:
@@ -94,12 +105,15 @@ for i in range(0,dataN):
         print('%s'%(i_file))
         print('%s'%(t_file))
         print('14 %f %f %f %f'%(cx,cy,aw,ah))
-        print('image',f_loc)
+        print('image',image.shape)
+        print(score)
         lx,ly,rx,ry=f_loc.astype(dtype=np.int)
         cv2.rectangle(image,(lx,ly),(rx,ry),(0,0,255),2)
         view_i(image)
 
 if args.view is False:
     itxt.close()
-print('valid images = %d'%(validN))
-cv2.destroyAllWindows()
+else:
+    cv2.destroyAllWindows()
+print('images valid/total= %d/%d'%(validN,dataN))
+
