@@ -90,6 +90,7 @@ for i in range(args.start,dataN):
         lost_file.write('%s\n'%(i_file))
         print('not found   %s'%(i_file))
         lost_file.close()
+        lost_file = None
         continue
     image=read_i(i_file)
     if image is None:
@@ -97,6 +98,7 @@ for i in range(args.start,dataN):
         lost_file.write('%s\n'%(i_file))
         print('cannot read %s'%(i_file))
         lost_file.close()
+        lost_file = None
         continue
     h,w,c = image.shape
     lx,ly,rx,ry = f_loc.astype(dtype=np.int)
