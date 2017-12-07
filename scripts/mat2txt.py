@@ -10,9 +10,8 @@ import numpy as np
 def read_i(i_file):
     if os.path.exists(i_file):
         image=cv2.imread(i_file)
-    else:
-        print('%s not found'%(i_file))
-    return image
+        return image
+    return None
 
 def view_i(image):
     cv2.imshow('image-check',image)
@@ -72,6 +71,7 @@ if args.shuffle is True:
     face_scores    =face_scores[index]
     face_scores_2nd=face_scores_2nd[index]
 
+lost_file=None
 if args.view is False:
     itxt = open(train_txt,'w')
 for i in range(args.start,dataN):
@@ -85,8 +85,19 @@ for i in range(args.start,dataN):
     if math.isnan(score):continue
     if math.isnan(score2nd) is False:continue
 
+    if not os.path.exists(i_file):
+        if lost_file is None: lost_file = open('LOST_FILE.txt','a')
+        lost_file.write('%s\n'%(i_file))
+        print('not found   %s'%(i_file))
+        lost_file.close()
+        continue
     image=read_i(i_file)
-    if image is None:continue
+    if image is None:
+        if lost_file is None: lost_file = open('LOST_FILE.txt','a')
+        lost_file.write('%s\n'%(i_file))
+        print('cannot read %s'%(i_file))
+        lost_file.close()
+        continue
     h,w,c = image.shape
     lx,ly,rx,ry = f_loc.astype(dtype=np.int)
     if h < ry or w < rx: continue
