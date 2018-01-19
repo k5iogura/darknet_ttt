@@ -24,6 +24,8 @@ def view_i(image):
         elif k!=-1: print(k)
 
 def convert(size, box):
+    #The Same as YOLO Format
+    # classid <center-x> <center-y> <width> <height>
     dw = 1./(size[0])
     dh = 1./(size[1])
     x = (box[0] + box[1])/2.0 - 1
