@@ -1,0 +1,6 @@
+classes= 20
+train  = /home/20076433/Darknet/darknet_sdl/all_trainval.txt
+valid  = /home/20076433/Darknet/darknet_sdl/all_test.txt
+names = data/voc.names
+backup = backup_det
+
