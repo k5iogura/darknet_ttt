@@ -541,17 +541,36 @@ void fill_hierarchy(float *truth, int k, tree *hierarchy)
 
 matrix load_regression_labels_paths(char **paths, int n)
 {
-    matrix y = make_matrix(n, 1);
+    //matrix y = make_matrix(n, 1); //original
+    int cols = 4;           // add from here
+    matrix y = make_matrix(n, cols);
+    float **vals = y.vals;  // end of add
     int i;
     for(i = 0; i < n; ++i){
         char labelpath[4096];
         find_replace(paths[i], "images", "targets", labelpath);
-        find_replace(labelpath, "JPEGImages", "targets", labelpath);
+        find_replace(labelpath, "JPEGImages", "labels", labelpath);
         find_replace(labelpath, ".jpg", ".txt", labelpath);
         find_replace(labelpath, ".png", ".txt", labelpath);
 
         FILE *file = fopen(labelpath, "r");
-        fscanf(file, "%f", &(y.vals[i][0]));
+        //fscanf(file, "%f", &(y.vals[i][0])); //original
+
+        if(!file){perror("label file not found");}  // add from here
+        float x,y,w,h;
+        int   id;
+        if (fscanf(file, "%d %f %f %f %f", &id, &x, &y, &w, &h)==cols+1 && id==14){
+            vals[i][0] = 1.0;
+            vals[i][1] = (w<h)? w:h;
+            vals[i][2] = x;
+            vals[i][3] = y;
+        }else{
+            vals[i][0] = 0.0;
+            vals[i][1] = 0.5;
+            vals[i][2] = 0.5;
+            vals[i][3] = 0.5;
+        }               // end of add
+
         fclose(file);
     }
     return y;
