@@ -1,4 +1,5 @@
 #include "darknet.h"
+#include "utils.h"
 
 static int coco_ids[] = {1,2,3,4,5,6,7,8,9,10,11,13,14,15,16,17,18,19,20,21,22,23,24,25,27,28,31,32,33,34,35,36,37,38,39,40,41,42,43,44,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,67,70,72,73,74,75,76,77,78,79,80,81,82,84,85,86,87,88,89,90};
 
@@ -6,6 +7,7 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
 {
     list *options = read_data_cfg(datacfg);
     char *train_images = option_find_str(options, "train", "data/train.list");
+    char *id_remap_file = option_find_str(options, "idremap", "no_idremap.data");   //add
     char *backup_directory = option_find_str(options, "backup", "/backup/");
 
     srand(time(0));
@@ -52,7 +54,26 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
     args.d = &buffer;
     args.type = DETECTION_DATA;
     //args.type = INSTANCE_DATA;
-    args.threads = 8;
+    args.threads = 64;
+    //args.threads = 1;
+
+    args.id_remap = calloc(classes, sizeof(int));   //add
+    if(0==strcmp(id_remap_file,"no_idremap.data")){  //add
+        fprintf(stderr,"no remap\n");
+        for(i=0;i<classes;i++) args.id_remap[i] = i;
+    }else{
+        fprintf(stderr,"remap by %s\n",id_remap_file);
+        FILE *file = fopen(id_remap_file, "r");
+        int org_id;
+        if(!file) (void)file_error(id_remap_file);
+        for(i=0;i<classes;i++){
+            if(fscanf(file, "%d", &org_id) == 1){
+                fprintf(stderr,"remap %d to %d\n",org_id,i);
+                args.id_remap[i] = org_id;
+            }else break;
+        }
+        fclose(file);
+    }
 
     pthread_t load_thread = load_data(args);
     clock_t time;
@@ -91,9 +112,9 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
             printf("loaded: %f %f %f %f\n", b.x, b.y, b.w, b.h);
         }
         */
-        /*
+        if(0){
         int zz;
-        for(zz = 0; zz < train.X.cols; ++zz){
+        for(zz = 0; zz < train.X.rows; ++zz){
             image im = float_to_image(net.w, net.h, 3, train.X.vals[zz]);
             int k;
             for(k = 0; k < l.max_boxes; ++k){
@@ -102,11 +123,11 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
                 draw_bbox(im, b, 1, 1,0,0);
             }
             show_image(im, "truth11");
-            cvWaitKey(0);
-            save_image(im, "truth11");
+            int key=cvWaitKey(0);
+            if(key==27)break;
+        //    save_image(im, "truth11");
         }
-        */
-
+        }
         printf("Loaded: %lf seconds\n", sec(clock()-time));
 
         time=clock();
@@ -493,8 +514,11 @@ void validate_detector(char *datacfg, char *cfgfile, char *weightfile, char *out
     fprintf(stderr, "Total Detection Time: %f Seconds\n", (double)(time(0) - start));
 }
 
-void validate_detector_recall(char *cfgfile, char *weightfile)
+void validate_detector_recall(char *datacfg, char *cfgfile, char *weightfile)
 {
+    list *options = read_data_cfg(datacfg); //add
+    char *name_list = option_find_str(options, "valid", "data/names.list"); //add
+
     network net = parse_network_cfg(cfgfile);
     if(weightfile){
         load_weights(&net, weightfile);
@@ -503,7 +527,9 @@ void validate_detector_recall(char *cfgfile, char *weightfile)
     fprintf(stderr, "Learning Rate: %g, Momentum: %g, Decay: %g\n", net.learning_rate, net.momentum, net.decay);
     srand(time(0));
 
-    list *plist = get_paths("data/coco_val_5k.list");
+    //list *plist = get_paths("data/coco_val_5k.list");
+    //list *plist = get_paths("/home/20076433/Darknet/darknet/1000.txt");
+    list *plist = get_paths(name_list);
     char **paths = (char **)list_to_array(plist);
 
     layer l = net.layers[net.n-1];
@@ -698,7 +724,7 @@ void run_detector(int argc, char **argv)
     else if(0==strcmp(argv[2], "train")) train_detector(datacfg, cfg, weights, gpus, ngpus, clear);
     else if(0==strcmp(argv[2], "valid")) validate_detector(datacfg, cfg, weights, outfile);
     else if(0==strcmp(argv[2], "valid2")) validate_detector_flip(datacfg, cfg, weights, outfile);
-    else if(0==strcmp(argv[2], "recall")) validate_detector_recall(cfg, weights);
+    else if(0==strcmp(argv[2], "recall")) validate_detector_recall(datacfg, cfg, weights);
     else if(0==strcmp(argv[2], "demo")) {
         list *options = read_data_cfg(datacfg);
         int classes = option_find_int(options, "classes", 20);

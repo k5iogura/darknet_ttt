@@ -143,7 +143,7 @@ void predict_regressor(char *cfgfile, char *weightfile, char *filename)
         float *X = sized.data;
         time=clock();
         float *predictions = network_predict(net, X);
-        printf("Predicted: %f\n", predictions[0]);
+        printf("Predicted: %f  radius:%.4f (%.9f , %.2f)\n", predictions[0],predictions[1],predictions[2],predictions[3]);
         printf("%s: Predicted in %f seconds.\n", input, sec(clock()-time));
         free_image(im);
         free_image(sized);
@@ -152,7 +152,7 @@ void predict_regressor(char *cfgfile, char *weightfile, char *filename)
 }
 
 
-void demo_regressor(char *datacfg, char *cfgfile, char *weightfile, int cam_index, const char *filename)
+void demo_regressor(char *cfgfile, char *weightfile, int cam_index, const char *filename)
 {
 #ifdef OPENCV
     printf("Regressor Demo\n");
@@ -238,13 +238,23 @@ void run_regressor(int argc, char **argv)
 
     int cam_index = find_int_arg(argc, argv, "-c", 0);
     int clear = find_arg(argc, argv, "-clear");
-    char *data = argv[3];
-    char *cfg = argv[4];
-    char *weights = (argc > 5) ? argv[5] : 0;
-    char *filename = (argc > 6) ? argv[6]: 0;
-    if(0==strcmp(argv[2], "test")) predict_regressor(data, cfg, weights);
+    char *data;
+    char *cfg;
+    char *weights;
+    char *filename;
+    if(0==strcmp(argv[2], "test") || 0==strcmp(argv[2],"demo")){
+        cfg = argv[3];
+        weights = argv[4];
+        filename = (argc > 4) ? argv[5]: 0;
+    }else{
+        data = argv[3];
+        cfg = argv[4];
+        weights = (argc > 5) ? argv[5] : 0;
+        filename = (argc > 6) ? argv[6]: 0;
+    }
+    if(0==strcmp(argv[2],      "test"))  predict_regressor(cfg, weights, filename);
     else if(0==strcmp(argv[2], "train")) train_regressor(data, cfg, weights, gpus, ngpus, clear);
-    else if(0==strcmp(argv[2], "demo")) demo_regressor(data, cfg, weights, cam_index, filename);
+    else if(0==strcmp(argv[2], "demo"))  demo_regressor(cfg, weights, cam_index, filename);
 }
 
 

@@ -110,6 +110,7 @@ matrix load_image_augment_paths(char **paths, int n, int min, int max, int size,
     X.vals = calloc(X.rows, sizeof(float*));
     X.cols = 0;
 
+    center=0;   // for debug
     for(i = 0; i < n; ++i){
         image im = load_image_color(paths[i], 0, 0);
         image crop;
@@ -119,7 +120,7 @@ matrix load_image_augment_paths(char **paths, int n, int min, int max, int size,
             crop = random_augment_image(im, angle, aspect, min, max, size, size);
         }
         int flip = rand()%2;
-        if (flip) flip_image(crop);
+        //if (flip) flip_image(crop);
         random_distort_image(crop, hue, saturation, exposure);
 
         /*
@@ -956,7 +957,7 @@ data load_data_swag(char **paths, int n, int classes, float jitter)
     return d;
 }
 
-data load_data_detection(int n, char **paths, int m, int w, int h, int boxes, int classes, float jitter, float hue, float saturation, float exposure)
+data load_data_detection(int n, char **paths, int m, int w, int h, int boxes, int classes, float jitter, float hue, float saturation, float exposure, int *id_remap)
 {
     char **random_paths = get_random_paths(paths, n, m);
     int i;
@@ -1001,6 +1002,13 @@ data load_data_detection(int n, char **paths, int m, int w, int h, int boxes, in
 
 
         fill_truth_detection(random_paths[i], boxes, d.y.vals[i], classes, flip, -dx/w, -dy/h, nw/w, nh/h);
+        int new_id;
+        int id_indx = 4;
+        for(new_id=0;new_id<classes;new_id++){
+            int org_id = id_remap[new_id];
+            if(d.y.vals[i][id_indx]==org_id)
+                d.y.vals[i][id_indx]=new_id;
+        }
 
         free_image(orig);
     }
@@ -1033,7 +1041,7 @@ void *load_thread(void *ptr)
     } else if (a.type == REGION_DATA){
         *a.d = load_data_region(a.n, a.paths, a.m, a.w, a.h, a.num_boxes, a.classes, a.jitter, a.hue, a.saturation, a.exposure);
     } else if (a.type == DETECTION_DATA){
-        *a.d = load_data_detection(a.n, a.paths, a.m, a.w, a.h, a.num_boxes, a.classes, a.jitter, a.hue, a.saturation, a.exposure);
+        *a.d = load_data_detection(a.n, a.paths, a.m, a.w, a.h, a.num_boxes, a.classes, a.jitter, a.hue, a.saturation, a.exposure, a.id_remap);
     } else if (a.type == SWAG_DATA){
         *a.d = load_data_swag(a.paths, a.n, a.classes, a.jitter);
     } else if (a.type == COMPARE_DATA){

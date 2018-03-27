@@ -1,6 +1,7 @@
 classes= 20
-train  = /home/20076433/20076433/detector/train.txt
-valid  = /home/20076433/20076433/detector/2007_test.txt
+train  = /home/20076433/20076433/dataset/train.txt
+valid  = /home/20076433/Darknet/darknet/1000.txt
 names = data/voc.names
-backup = backup_det
+backup = TTT1
+idremap = data/voc_idremap.data
 

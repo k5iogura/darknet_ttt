@@ -539,6 +539,7 @@ typedef struct load_args{
     float saturation;
     float exposure;
     float hue;
+    int *id_remap;  //add
     data *d;
     image *im;
     image *resized;
