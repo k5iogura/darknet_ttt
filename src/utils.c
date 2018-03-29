@@ -10,6 +10,59 @@
 
 #include "utils.h"
 
+/*int id_remap_sort(box_label *truth, int num_labels, int *id_remap, int classes){
+        int jj,kk,new_id,jj_found,ignores=0;    //add
+        box_label noobj_truth={0};
+        for(jj = 0; jj<num_labels; jj++){
+            for(new_id = 0, jj_found = 0; new_id<classes; new_id++){
+                int org_id = id_remap[new_id];
+                if(truth[jj].id == org_id) jj_found=1;
+            }
+            if(!jj_found){
+                ignores++;
+                truth[jj]=noobj_truth;
+                for(kk=jj+1 ; kk<num_labels ; kk++){
+                    truth[kk-1]=truth[kk];
+                    truth[kk-1]=noobj_truth;
+                }
+            }
+        }
+        return ignores;
+}*/
+
+int *load_id_remap(char *id_remap_file, int classes){
+    char *ignore = "no_idremap.data";
+    int *id_remap = calloc(classes, sizeof(int));
+    int i;
+    if(!id_remap_file || 0==strcmp(id_remap_file,ignore)){
+        fprintf(stderr,"no remap\n");
+        for(i=0;i<classes;i++) id_remap[i] = i;
+    }else{
+        fprintf(stderr,"remap by %s\n",id_remap_file);
+        FILE *file = fopen(id_remap_file, "r");
+        int org_id;
+        if(!file) (void)file_error(id_remap_file);
+        for(i=0;i<classes;i++){
+            if(fscanf(file, "%d", &org_id) == 1){
+                fprintf(stderr,"remap %d to %d\n",org_id,i);
+                id_remap[i] = org_id;
+            }else break;
+        }
+        fclose(file);
+    }
+    return id_remap;
+}
+
+/*void id_remapping(int classes, int *id_remap, float *truth){
+    int new_id;
+    int id_indx = 4;
+    for(new_id=0;new_id<classes;new_id++){
+        int org_id = id_remap[new_id];
+        if(truth[id_indx]==org_id)
+            truth[id_indx]=new_id;
+    }
+}*/
+
 double what_time_is_it_now()
 {
     struct timespec now;

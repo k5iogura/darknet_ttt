@@ -7,6 +7,9 @@
 
 #define TWO_PI 6.2831853071795864769252866
 
+//int id_remap_sort(box_label *truth, int num_labels, int *id_remap, int classes);
+int *load_id_remap(char *id_remap_file, int classes);
+//void id_remapping(int classes, int *id_remap, float *truth);
 double what_time_is_it_now();
 void shuffle(void *arr, size_t n, size_t size);
 void sorta_shuffle(void *arr, size_t n, size_t size, size_t sections);

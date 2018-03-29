@@ -57,23 +57,7 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
     args.threads = 64;
     //args.threads = 1;
 
-    args.id_remap = calloc(classes, sizeof(int));   //add
-    if(0==strcmp(id_remap_file,"no_idremap.data")){  //add
-        fprintf(stderr,"no remap\n");
-        for(i=0;i<classes;i++) args.id_remap[i] = i;
-    }else{
-        fprintf(stderr,"remap by %s\n",id_remap_file);
-        FILE *file = fopen(id_remap_file, "r");
-        int org_id;
-        if(!file) (void)file_error(id_remap_file);
-        for(i=0;i<classes;i++){
-            if(fscanf(file, "%d", &org_id) == 1){
-                fprintf(stderr,"remap %d to %d\n",org_id,i);
-                args.id_remap[i] = org_id;
-            }else break;
-        }
-        fclose(file);
-    }
+    args.id_remap = load_id_remap(id_remap_file, classes);   //add
 
     pthread_t load_thread = load_data(args);
     clock_t time;
@@ -124,7 +108,8 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
             }
             show_image(im, "truth11");
             int key=cvWaitKey(0);
-            if(key==27)break;
+            if(key==27)exit(0);       //ESC
+            if(key==1048603)exit(0);  //ESC
         //    save_image(im, "truth11");
         }
         }
@@ -517,6 +502,7 @@ void validate_detector(char *datacfg, char *cfgfile, char *weightfile, char *out
 void validate_detector_recall(char *datacfg, char *cfgfile, char *weightfile)
 {
     list *options = read_data_cfg(datacfg); //add
+    char *id_remap_file = option_find_str(options, "idremap", "no_idremap.data");   //add
     char *name_list = option_find_str(options, "valid", "data/names.list"); //add
 
     network net = parse_network_cfg(cfgfile);
@@ -535,6 +521,8 @@ void validate_detector_recall(char *datacfg, char *cfgfile, char *weightfile)
     layer l = net.layers[net.n-1];
     int classes = l.classes;
 
+    int  *id_remap = load_id_remap(id_remap_file, classes);   //add
+
     int j, k;
     box *boxes = calloc(l.w*l.h*l.n, sizeof(box));
     float **probs = calloc(l.w*l.h*l.n, sizeof(float *));
@@ -552,6 +540,7 @@ void validate_detector_recall(char *datacfg, char *cfgfile, char *weightfile)
     int proposals = 0;
     float avg_iou = 0;
 
+    fprintf(stderr, "   No crrct truth\n");
     for(i = 0; i < m; ++i){
         char *path = paths[i];
         image orig = load_image_color(path, 0, 0);
@@ -568,7 +557,11 @@ void validate_detector_recall(char *datacfg, char *cfgfile, char *weightfile)
         find_replace(labelpath, ".JPEG", ".txt", labelpath);
 
         int num_labels = 0;
-        box_label *truth = read_boxes(labelpath, &num_labels);
+        box_label *truth = read_boxes_remapping(labelpath, &num_labels, id_remap, classes);
+
+//        int ignores = id_remap_sort(truth, num_labels, id_remap, classes);  //add
+//        num_labels -= ignores;    //add
+
         for(k = 0; k < l.w*l.h*l.n; ++k){
             if(probs[k][0] > thresh){
                 ++proposals;

@@ -162,6 +162,40 @@ box_label *read_boxes(char *filename, int *n)
     return boxes;
 }
 
+box_label *read_boxes_remapping(char *filename, int *n, int *id_remap, int classes) //add
+{
+    box_label *boxes = calloc(1, sizeof(box_label));
+    FILE *file = fopen(filename, "r");
+    if(!file) file_error(filename);
+    float x, y, h, w;
+    int id;
+    int count = 0;
+    while(fscanf(file, "%d %f %f %f %f", &id, &x, &y, &w, &h) == 5){
+        if(id_remap){
+            int new_id,found=0;
+            for(new_id=0;new_id<classes;new_id++)
+                if(id == id_remap[new_id])
+                    {found=1;break;}
+            if(!found) continue;
+            else id = new_id;
+        }
+        boxes = realloc(boxes, (count+1)*sizeof(box_label));
+        boxes[count].id = id;
+        boxes[count].x = x;
+        boxes[count].y = y;
+        boxes[count].h = h;
+        boxes[count].w = w;
+        boxes[count].left   = x - w/2;
+        boxes[count].right  = x + w/2;
+        boxes[count].top    = y - h/2;
+        boxes[count].bottom = y + h/2;
+        ++count;
+    }
+    fclose(file);
+    *n = count;
+    return boxes;
+}
+
 void randomize_boxes(box_label *b, int n)
 {
     int i;
@@ -415,6 +449,44 @@ void fill_truth_detection(char *path, int num_boxes, float *truth, int classes, 
     find_replace(labelpath, ".JPEG", ".txt", labelpath);
     int count = 0;
     box_label *boxes = read_boxes(labelpath, &count);
+    randomize_boxes(boxes, count);
+    correct_boxes(boxes, count, dx, dy, sx, sy, flip);
+    if(count > num_boxes) count = num_boxes;
+    float x,y,w,h;
+    int id;
+    int i;
+
+    for (i = 0; i < count; ++i) {
+        x =  boxes[i].x;
+        y =  boxes[i].y;
+        w =  boxes[i].w;
+        h =  boxes[i].h;
+        id = boxes[i].id;
+
+        if ((w < .001 || h < .001)) continue;
+
+        truth[i*5+0] = x;
+        truth[i*5+1] = y;
+        truth[i*5+2] = w;
+        truth[i*5+3] = h;
+        truth[i*5+4] = id;
+    }
+    free(boxes);
+}
+
+void fill_truth_detection_remapping(char *path, int num_boxes, float *truth, int classes, int flip, float dx, float dy, float sx, float sy, int *id_remap)
+{
+    char labelpath[4096];
+    find_replace(path, "images", "labels", labelpath);
+    find_replace(labelpath, "JPEGImages", "labels", labelpath);
+
+    find_replace(labelpath, "raw", "labels", labelpath);
+    find_replace(labelpath, ".jpg", ".txt", labelpath);
+    find_replace(labelpath, ".png", ".txt", labelpath);
+    find_replace(labelpath, ".JPG", ".txt", labelpath);
+    find_replace(labelpath, ".JPEG", ".txt", labelpath);
+    int count = 0;
+    box_label *boxes = read_boxes_remapping(labelpath, &count, id_remap, classes);
     randomize_boxes(boxes, count);
     correct_boxes(boxes, count, dx, dy, sx, sy, flip);
     if(count > num_boxes) count = num_boxes;
@@ -1000,15 +1072,9 @@ data load_data_detection(int n, char **paths, int m, int w, int h, int boxes, in
         if(flip) flip_image(sized);
         d.X.vals[i] = sized.data;
 
+        fill_truth_detection_remapping(random_paths[i], boxes, d.y.vals[i], classes, flip, -dx/w, -dy/h, nw/w, nh/h, id_remap);
 
-        fill_truth_detection(random_paths[i], boxes, d.y.vals[i], classes, flip, -dx/w, -dy/h, nw/w, nh/h);
-        int new_id;
-        int id_indx = 4;
-        for(new_id=0;new_id<classes;new_id++){
-            int org_id = id_remap[new_id];
-            if(d.y.vals[i][id_indx]==org_id)
-                d.y.vals[i][id_indx]=new_id;
-        }
+        //id_remapping(classes, id_remap, d.y.vals[i]);
 
         free_image(orig);
     }
