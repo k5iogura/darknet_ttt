@@ -172,12 +172,10 @@ box_label *read_boxes_remapping(char *filename, int *n, int *id_remap, int class
     int count = 0;
     while(fscanf(file, "%d %f %f %f %f", &id, &x, &y, &w, &h) == 5){
         if(id_remap){
-            int new_id,found=0;
+            int new_id;
             for(new_id=0;new_id<classes;new_id++)
                 if(id == id_remap[new_id])
-                    {found=1;break;}
-            if(!found) continue;
-            else id = new_id;
+                    {id = new_id;break;}
         }
         boxes = realloc(boxes, (count+1)*sizeof(box_label));
         boxes[count].id = id;
