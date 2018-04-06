@@ -12,6 +12,7 @@ list *read_data_cfg(char *filename)
     int nu = 0;
     list *options = make_list();
     while((line=fgetl(file)) != 0){
+        fprintf(stderr,"%s\n",line);    //add
         ++ nu;
         strip(line);
         switch(line[0]){
