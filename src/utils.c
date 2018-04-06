@@ -93,6 +93,18 @@ int *read_intlist(char *gpu_list, int *ngpus, int d)
     return gpus;
 }
 
+// layer.map for replacing original id to some new id
+// replaced truth.id
+// replaced_id = layer.map[original_id]
+// In .data file
+//   map = map_file
+// map_file:
+//  0   <= if index of map_file is 0 then original 0(ie.COCO) became 0(COCO), don't replace
+//  ..
+//  0   <= if index of map_file is 14 then original 14(ie.VOC) became 0(COCO)
+//  ..
+//  numberN
+//   here N is original categories, ie. N=20 at VOC
 int *read_map(char *filename)
 {
     int n = 0;
