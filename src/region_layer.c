@@ -47,7 +47,7 @@ layer make_region_layer(int batch, int w, int h, int n, int classes, int coords)
     l.delta_gpu = cuda_make_array(l.delta, batch*l.outputs);
 #endif
 
-    fprintf(stderr, "detection\n");
+    fprintf(stderr, "region\n");
     srand(0);
 
     return l;
@@ -361,6 +361,36 @@ void correct_region_boxes(box *boxes, int n, int w, int h, int netw, int neth, i
     }
 }
 
+//=prediction=       ____________
+//                  /prediction /x,y,w,h,c,class0->classN (float type)
+//                 /l.n        /<_________________________>
+//                /           /
+//               /____l.w____/
+//               |           |
+//            l.h|           |  <= obj_index    by entry_index()
+//               |           |  <= box_index    by entry_index()
+//               |           |  <= class_index  by entry_index()
+//
+//=probs=            ____________
+//                  /   probs   / 0 or class0->classN greater than thresh ,max_class (float type)
+//                 /l.n        /<___________________________________________________>
+//                /           /
+//               /____l.w____/
+//               |           |  <= index
+//            l.h|           |
+//               |           |
+//               |           |
+//
+//=boxes=            ____________
+//                  /   boxes   / x,y,w,h (box type)
+//                 /l.n        /<__________>
+//                /           /
+//               /____l.w____/
+//               |           |
+//            l.h|           |  <= index
+//               |           |
+//               |           |
+//
 void get_region_boxes(layer l, int w, int h, int netw, int neth, float thresh, float **probs, box *boxes, float **masks, int only_objectness, int *map, float tree_thresh, int relative)
 {
     int i,j,n,z;
