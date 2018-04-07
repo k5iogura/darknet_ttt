@@ -1,5 +1,5 @@
 classes= 20
-train  = /home/20076433/20076433/dataset/train.txt
+train  = /home/20076433/20076433/dataset/train_imdb_yolo_5091.txt
 valid  = /home/20076433/Darknet/darknet/1000.txt
 names = data/voc.names
 backup = TTT1

@@ -1,11 +1,12 @@
-export PKG_CONFIG_PATH=/home/kenji/libs2/opencv-2.4.13-x86_linux_gcc/installed/lib/pkgconfig:/home/kenji/libs/SDL2_x86/lib/pkgconfig:/home/kenji/libs/ffmpeg_x86+x264/lib/pkgconfig
-GPU=0
+#export PKG_CONFIG_PATH=/home/kenji/libs2/opencv-2.4.13-x86_linux_gcc/installed/lib/pkgconfig:/home/kenji/libs/SDL2_x86/lib/pkgconfig:/home/kenji/libs/ffmpeg_x86+x264/lib/pkgconfig
+export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
+GPU=1
 CUDNN=0
-OPENCV?=0
+OPENCV?=1
 OPENMP=0
 DEBUG?=0
 
-ARCH= -gencode arch=compute_20,code=[sm_20,sm_21] \
+ARCH= \
       -gencode arch=compute_30,code=sm_30 \
       -gencode arch=compute_35,code=sm_35 \
       -gencode arch=compute_50,code=[sm_50,compute_50] \
@@ -43,9 +44,9 @@ ifeq ($(OPENCV), 1)
 COMMON+= -DOPENCV
 #CFLAGS+= -DOPENCV -DSDL2 -DSINGLE_THREAD_SDL
 CFLAGS+= -DOPENCV -DSDL2
-COMMON+= -Wno-unused-function -Wno-unused-result -Wno-unused-variable
-COMMON+= -Wno-return-type -Wno-format-security -Wno-pointer-sign
-COMMON+= -Wno-maybe-uninitialized -Wno-implicit-int
+#COMMON+= -Wno-unused-function -Wno-unused-result -Wno-unused-variable
+#COMMON+= -Wno-return-type -Wno-format-security -Wno-pointer-sign
+#COMMON+= -Wno-maybe-uninitialized -Wno-implicit-int
 LDFLAGS+= `pkg-config --libs opencv` 
 COMMON+= `pkg-config --cflags opencv` 
 LDFLAGS+= `pkg-config --libs sdl2` 
