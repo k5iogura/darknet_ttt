@@ -1,0 +1,1 @@
+./darknet classifier valid ttt3_pre15.data ttt3_pre.cfg TTT3_PRE/ttt3_pre_169.weights
