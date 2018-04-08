@@ -1,0 +1,6 @@
+classes= 15
+train  = /home/ogura/20076433/tiny_imagenet/tiny-imagenet-200/train15_t-imagenet.txt
+valid  = /home/ogura/20076433/tiny_imagenet/tiny-imagenet-200/val15_t-imagenet.txt
+labels = /home/ogura/20076433/tiny_imagenet/tiny-imagenet-200/wnids15.txt
+backup = TTT3_PRE
+top = 5

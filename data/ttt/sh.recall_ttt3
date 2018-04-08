@@ -1,0 +1,1 @@
+./darknet detector recall wiki_yolo.data cfg/ttt3.cfg TTT3_WIKI_BODY/ttt3_900.weights
