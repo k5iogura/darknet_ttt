@@ -2,17 +2,28 @@
 import numpy as np
 import math
 import re
-import sys
 from pdb import *
+import argparse
+import numpy as np
+import matplotlib.pyplot as plt
 
-with open(sys.argv[1]) as f:
+parser = argparse.ArgumentParser(description='loss curve')
+parser.add_argument('logf')
+parser.add_argument('--plot',  '-p',    action='store_true')
+args = parser.parse_args()
+
+log_file = args.logf
+with open(log_file) as f:
     l2 = f.readlines()
-    #print('%d lines'%len(l2))
 
 avg_min = 9999999
 min_ech = 0
 weights = min_weights = ""
 lastavg = 0
+
+points  = 0
+graphY  = np.zeros(len(l2),dtype=np.float)
+
 for m in l2:
     ech = re.search('[0-9]+',str(m))
     avg = re.findall('([0-9]+\.[0-9]+) +avg',str(m))
@@ -21,11 +32,19 @@ for m in l2:
     if len(wgt)!=0 and bup != 1: weights = str(wgt[0])
     if len(avg)==0: continue
     if len(avg)==1:
+        points+=1
         avg = float(avg[0])
+        graphY[points]=avg
         lastavg = avg
         if math.isnan(avg):lastavg = 9999999.
         epoch = int(ech.group())
         if avg_min>avg: avg_min, min_ech, min_weights = (avg, epoch, weights)
-    #   print('%d %.5f'%(epoch, avg))
 print('MinimalLoss: %d epoch %.5f loss %s'%(min_ech, avg_min, min_weights))
 print('LastStage  : %d epoch %.5f loss %s'%(epoch, lastavg, weights))
+
+if args.plot:
+    GraphY  = np.zeros(points,dtype=np.float)
+    GraphY  = graphY[0:points]
+    print('points=%d loglen=%d'%(points,len(l2)))
+    plt.plot(GraphY)
+    plt.show()
