@@ -62,6 +62,7 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
     pthread_t load_thread = load_data(args);
     clock_t time;
     int count = 0;
+    float min_loss = 9999999999.;
     //while(i*imgs < N*120){
     while(get_current_batch(net) < net.max_batches){
         if(l.random && count++%10 == 0){
@@ -139,12 +140,21 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
             sprintf(buff, "%s/%s.backup", backup_directory, base);
             save_weights(net, buff);
         }
-        if(i%10000==0 || (i < 1000 && i%100 == 0)){
+        if(i%10000==0 || (i > 10000 && i%1000 == 0) || (i < 1000 && i%100 == 0)){
 #ifdef GPU
             if(ngpus != 1) sync_nets(nets, ngpus, 0);
 #endif
             char buff[256];
             sprintf(buff, "%s/%s_%d.weights", backup_directory, base, i);
+            save_weights(net, buff);
+        }
+        if(i>1000 && min_loss > avg_loss){
+            min_loss = avg_loss;
+#ifdef GPU
+            if(ngpus != 1) sync_nets(nets, ngpus, 0);
+#endif
+            char buff[256];
+            sprintf(buff, "%s/%s_minloss.weights", backup_directory, base);
             save_weights(net, buff);
         }
         free_data(train);
