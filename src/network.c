@@ -117,7 +117,7 @@ float get_current_rate(network net)
         case STEPS:
             rate = net.learning_rate;
             for(i = 0; i < net.num_steps; ++i){
-                if(net.steps[i] > batch_num) return rate;
+                if(net.steps[i] > 1.0*batch_num) return rate;
                 rate *= net.scales[i];
                 //if(net.steps[i] > batch_num - 1 && net.scales[i] > 1) reset_momentum(net);
             }
