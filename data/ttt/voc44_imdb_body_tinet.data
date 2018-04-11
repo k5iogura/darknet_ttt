@@ -1,0 +1,13 @@
+classes= 2
+train  = /home/20076433/20076433/DatasetScriptPosi3/train_imdb_f01_body.txt
+#train  = /home/20076433/20076433/DatasetScriptPosi3/train_wiki_f01_id14.txt
+#train  = /home/20076433/20076433/DatasetScriptPosi/train_voc_f01.all.txt
+#train  = /home/20076433/20076433/DatasetScriptPosi/train_imdb_f01.txt
+valid  = /home/20076433/Darknet/darknet_sdl/2012.txt
+#valid  = /home/20076433/Darknet/darknet_sdl/2007.txt
+#valid  = /home/20076433/Darknet/darknet_sdl/wiki_f01.txt
+#valid  = /home/20076433/Darknet/darknet_sdl/imdb_f01.txt
+names = data/voc.names
+backup = TTT4_IMDB_BODY_TINET
+idremap = data/voc_idremap.data
+
