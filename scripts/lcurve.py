@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 parser = argparse.ArgumentParser(description='loss curve')
 parser.add_argument('logf')
 parser.add_argument('--plot',  '-p',    action='store_true')
+parser.add_argument('--after', '-A', type=int, default=0)
 args = parser.parse_args()
 
 log_file = args.logf
@@ -32,6 +33,7 @@ for m in l2:
     if len(wgt)!=0 and bup != 1: weights = str(wgt[0])
     if len(avg)==0: continue
     if len(avg)==1:
+        if args.after > int(ech.group()):continue
         points+=1
         avg = float(avg[0])
         graphY[points]=avg
