@@ -6,6 +6,7 @@ from pdb import *
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
+import sys
 
 parser = argparse.ArgumentParser(description='loss curve')
 parser.add_argument('logf')
@@ -26,7 +27,8 @@ points  = 0
 graphY  = np.zeros(len(l2),dtype=np.float)
 
 for m in l2:
-    ech = re.search('[0-9]+',str(m))
+    if str(m)[0]=='0':continue
+    ech = re.search('[1-9][0-9]+',str(m))
     avg = re.findall('([0-9]+\.[0-9]+) +avg',str(m))
     wgt = re.findall('Saving weights to (\S+)',str(m))
     bup = len(re.findall('.backup',str(m)))
@@ -44,9 +46,13 @@ for m in l2:
 print('MinimalLoss: %d epoch %.5f loss %s'%(min_ech, avg_min, min_weights))
 print('LastStage  : %d epoch %.5f loss %s'%(epoch, lastavg, weights))
 
-if args.plot:
-    GraphY  = np.zeros(points,dtype=np.float)
-    GraphY  = graphY[0:points]
-    print('points=%d loglen=%d'%(points,len(l2)))
-    plt.plot(GraphY)
-    plt.show()
+try:
+    if args.plot:
+        GraphY  = np.zeros(points,dtype=np.float)
+        GraphY  = graphY[0:points]
+        print('points=%d loglen=%d'%(points,len(l2)))
+        plt.plot(GraphY)
+        plt.show()
+except KeyboardInterrupt:
+    print('stop')
+
