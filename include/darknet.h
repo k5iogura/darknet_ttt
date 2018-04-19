@@ -144,6 +144,7 @@ struct layer{
     int index;
     int binary;
     int xnor;
+    int x_mean;
     int steps;
     int hidden;
     int truth;

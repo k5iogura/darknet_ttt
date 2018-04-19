@@ -437,11 +437,20 @@ void forward_convolutional_layer(convolutional_layer l, network net)
     int i;
 
     fill_cpu(l.outputs*l.batch, 0, l.output, 1);
+    if(l.binary){
+        binarize_weights(l.weights, l.n, l.c*l.size*l.size, l.binary_weights);
+        swap_binary(&l);
+    }
 
     if(l.xnor){
         binarize_weights(l.weights, l.n, l.c*l.size*l.size, l.binary_weights);
         swap_binary(&l);
-        binarize_cpu(net.input, l.c*l.h*l.w*l.batch, l.binary_input);
+        if(l.x_mean==0)
+            binarize_cpu(net.input, l.c*l.h*l.w*l.batch, l.binary_input);
+        else
+            for(i = 0; i < l.batch; ++i){
+                binarize_input(net.input + i*l.inputs, l.c, l.h*l.w, l.binary_input + i*l.inputs);
+            }
         net.input = l.binary_input;
     }
 
