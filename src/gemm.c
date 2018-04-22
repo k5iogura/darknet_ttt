@@ -175,6 +175,7 @@ void gemm_cpu(int TA, int TB, int M, int N, int K, float ALPHA,
 #ifdef GPU
 
 #include <math.h>
+#include "gemm_gpu.h"
 
 void gemm_gpu(int TA, int TB, int M, int N, int K, float ALPHA, 
         float *A_gpu, int lda, 
@@ -182,6 +183,10 @@ void gemm_gpu(int TA, int TB, int M, int N, int K, float ALPHA,
         float BETA,
         float *C_gpu, int ldc)
 {
+#ifdef GEMM_GPU
+    if(!TA && !TB)
+        return gemm_nn_gpu(TA, TB, M, N, K, ALPHA, A_gpu,lda, B_gpu, BETA, ldb, C_gpu, ldc);
+#endif
     cublasHandle_t handle = blas_handle();
     cudaError_t status = cublasSgemm(handle, (TB ? CUBLAS_OP_T : CUBLAS_OP_N), 
             (TA ? CUBLAS_OP_T : CUBLAS_OP_N), N, M, K, &ALPHA, B_gpu, ldb, A_gpu, lda, &BETA, C_gpu, ldc);
