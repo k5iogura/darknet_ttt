@@ -1,11 +1,13 @@
 #include "darknet.h"
+#include "utils.h"
 
 char *voc_names[] = {"aeroplane", "bicycle", "bird", "boat", "bottle", "bus", "car", "cat", "chair", "cow", "diningtable", "dog", "horse", "motorbike", "person", "pottedplant", "sheep", "sofa", "train", "tvmonitor"};
 
 void train_yolo(char *cfgfile, char *weightfile)
 {
-    char *train_images = "/data/voc/train.txt";
-    char *backup_directory = "/home/pjreddie/backup/";
+    char *train_images = "/home/20076433/20076433/DatasetScriptPosi3/train_imdb_f01_body.txt";
+    char *id_remap_file = "data/voc_idremap.data";   //add
+    char *backup_directory = "./XYOLO_IMDB_BODY/";
     srand(time(0));
     char *base = basecfg(cfgfile);
     printf("%s\n", base);
@@ -46,6 +48,8 @@ void train_yolo(char *cfgfile, char *weightfile)
     args.exposure = net.exposure;
     args.saturation = net.saturation;
     args.hue = net.hue;
+
+    args.id_remap = load_id_remap(id_remap_file, classes);   //add
 
     pthread_t load_thread = load_data_in_thread(args);
     clock_t time;
