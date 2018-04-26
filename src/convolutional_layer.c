@@ -25,6 +25,40 @@ void swap_binary(convolutional_layer *l)
 #endif
 }
 
+void binarize_w2sign(float *weights, int n, int size, unsigned int *sign, float *scale)
+{
+    int i, f;
+    int word_index, bit_index;
+    for(word_index = f = 0; f < n; ++f){
+        float mean = 0;
+        for(i = 0; i < size; ++i)
+            mean += fabs(weights[f*size + i]);
+        scale[f] = mean / size;
+        //printf("scale[%d]-%9.5f\n",f,scale[f]);fflush(stdout);
+        for(bit_index = i = 0; i < size; ++i){
+            if(weights[f*size + i]>0){
+                sign[word_index] = ((sign[word_index]>>1)|0x80000000);
+            }else{
+                sign[word_index] = ((sign[word_index]>>1)&0x7fffffff);
+            }
+            //prbin(weights[f*size+i],sign[word_index]);
+            if(bit_index++==31){
+                //printf("%d word_index end\n",word_index);fflush(stdout);
+                bit_index = 0;
+                word_index++;
+            }
+        }
+        if(bit_index!=0){
+            sign[word_index]>>=bit_index;
+            //printf("remain %d bit\n",bit_index);fflush(stdout);
+            //prbin(0,sign[word_index]);
+            word_index++;
+        }else{
+            //prbin(0,sign[word_index]);
+        }
+    }
+}
+
 void binarize_weights(float *weights, int n, int size, float *binary)
 {
     int i, f;
@@ -206,13 +240,19 @@ convolutional_layer make_convolutional_layer(int batch, int h, int w, int c, int
     l.output = calloc(l.batch*l.outputs, sizeof(float));
     l.delta  = calloc(l.batch*l.outputs, sizeof(float));
 
-    l.forward = forward_convolutional_layer;
+    //l.forward = forward_convolutional_layer;  //remove
+    l.forward = forward_convolutional_layer_cpu;
     l.backward = backward_convolutional_layer;
     l.update = update_convolutional_layer;
     if(binary){
         l.binary_weights = calloc(c*n*size*size, sizeof(float));
         l.cweights = calloc(c*n*size*size, sizeof(char));
         l.scales = calloc(n, sizeof(float));
+        l.signWb = calloc(n*(int)ceilf(c*size*size/32.),sizeof(unsigned int));               //add
+        l.signIb = calloc(c*size*size*(int)ceilf(out_w*out_h/32.),sizeof(unsigned int));     //add
+        l.scale_alpha = calloc(n, sizeof(float));                           //add
+        l.scale_beta  = calloc(c*size*size, sizeof(float));                 //add
+        //printf("binary-weight=%d words signWb=%d words\n",c*n*size*size,(int)ceilf(c*size*size*n/32.));fflush(stdout);
     }
     if(xnor){
         l.binary_weights = calloc(c*n*size*size, sizeof(float));
@@ -428,6 +468,62 @@ void backward_bias(float *bias_updates, float *delta, int batch, int n, int size
             bias_updates[i] += sum_array(delta+size*(i+b*n), size);
         }
     }
+}
+
+void forward_convolutional_layer_cpu(convolutional_layer l, network net)
+{
+    int out_h = l.out_h;
+    int out_w = l.out_w;
+    int i;
+
+    fill_cpu(l.outputs*l.batch, 0, l.output, 1);
+    if(l.binary){
+        binarize_w2sign(l.weights, l.n, l.c*l.size*l.size, l.signWb, l.scale_alpha);
+//        binarize_weights(l.weights, l.n, l.c*l.size*l.size, l.binary_weights);
+        swap_binary(&l);
+    }
+
+    if(l.xnor){
+        binarize_weights(l.weights, l.n, l.c*l.size*l.size, l.binary_weights);
+        swap_binary(&l);
+        if(l.x_mean==0)
+            binarize_cpu(net.input, l.c*l.h*l.w*l.batch, l.binary_input);
+        else
+            for(i = 0; i < l.batch; ++i){
+                binarize_input(net.input + i*l.inputs, l.c, l.h*l.w, l.binary_input + i*l.inputs);
+            }
+        net.input = l.binary_input;
+    }
+
+    int m = l.n;
+    int k = l.size*l.size*l.c;
+    int n = out_h*out_w;
+
+
+    float *a = l.weights;
+    float *b = net.workspace;
+    float *c = l.output;
+
+    for(i = 0; i < l.batch; ++i){
+        im2col_cpu(net.input, l.c, l.h, l.w, 
+                l.size, l.stride, l.pad, b);
+        if(l.binary)
+            gemm_nn_sign(m,n,k,l.scale_alpha,l.signWb,k,b,n,c,n);
+            //gemm_nn_binary(m,n,k,a,k,b,n,c,n);
+        else
+            gemm(0,0,m,n,k,1,a,k,b,n,1,c,n);
+        c += n*m;
+        net.input += l.c*l.h*l.w;
+    }
+
+    if(l.batch_normalize){
+        forward_batchnorm_layer(l, net);
+    } else {
+        add_bias(l.output, l.biases, l.batch, l.n, out_h*out_w);
+    }
+
+    activate_array(l.output, m*n*l.batch, l.activation);
+    if(l.binary || l.xnor) swap_binary(&l);
 }
 
 void forward_convolutional_layer(convolutional_layer l, network net)
