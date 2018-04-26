@@ -89,6 +89,64 @@ void gemm_nn(int M, int N, int K, float ALPHA,
     }
 }
 
+void gemm_nn_binary(int M, int N, int K,
+        float *A, int lda, 
+        float *B, int ldb,
+        float *C, int ldc)
+{
+    int i,j,k;
+    for(i = 0; i < M; ++i){
+        for(k = 0; k < K; ++k){
+            float A_PART = A[i*lda+k];
+            if(A_PART>0)
+                for(j = 0; j < N; ++j)
+                    C[i*ldc+j] += B[k*ldb+j];
+            else
+                for(j = 0; j < N; ++j)
+                    C[i*ldc+j] -= B[k*ldb+j];
+        }
+        float A_PART = fabs(A[i*lda]);
+        for(j = 0; j < N; ++j)
+            C[i*ldc+j] *= A_PART;
+    }
+}
+
+void gemm_nn_sign(int M, int N, int K,
+        float *scale, unsigned int *A, int lda, 
+        float *B, int ldb,
+        float *C, int ldc)
+{
+    int i,j,k;
+    int word_index, bit_index;
+    unsigned int A_PART;
+    //printf("K=%d\n",K);
+    for(word_index = i = 0; i < M; ++i){
+        for(bit_index = k = 0, A_PART = A[word_index]; k < K; ++k){
+            if((A_PART & 0x1)==1){
+                for(j = 0; j < N; ++j)
+                    C[i*ldc+j] += B[k*ldb+j];
+                //printf("plus  %d ",word_index);
+            }else{
+                for(j = 0; j < N; ++j)
+                    C[i*ldc+j] -= B[k*ldb+j];
+                //printf("minus %d ",word_index);
+            }
+            //prbin((float)k,A_PART);
+            if(bit_index++==31){
+                bit_index = 0;
+                A_PART = A[++word_index];
+            }else
+                A_PART >>= 1;
+        }
+        if(bit_index!=0)
+            word_index++;
+        float SCALE = fabs(scale[i]);
+        //printf("scale=%9.5f\n",SCALE);fflush(stdout);
+        for(j = 0; j < N; ++j)
+            C[i*ldc+j] *= SCALE;
+    }
+}
+
 void gemm_nt(int M, int N, int K, float ALPHA, 
         float *A, int lda, 
         float *B, int ldb,
