@@ -9,6 +9,20 @@
 #include <time.h>
 
 #include "utils.h"
+void prbin(float w,unsigned int v) //add
+{
+    int i;
+    printf("%13.6f  ",w);
+    for(i=0;i<32;i++){
+        if((v & 0x80000000)==0x80000000)
+            printf("1");
+        else
+            printf("0");
+        v<<=1;
+    }
+    printf("\n");
+    fflush(stdout);
+}
 
 /*int id_remap_sort(box_label *truth, int num_labels, int *id_remap, int classes){
         int jj,kk,new_id,jj_found,ignores=0;    //add
