@@ -280,6 +280,55 @@ void fill_truth_swag(char *path, float *truth, int classes, int flip, float dx, 
     free(boxes);
 }
 
+void fill_truth_region_remapping(char *path, float *truth, int classes, int num_boxes, int flip, float dx, float dy, float sx, float sy, int *id_remap)
+{
+    char labelpath[4096];
+    find_replace(path, "images", "labels", labelpath);
+    find_replace(labelpath, "JPEGImages", "labels", labelpath);
+
+    find_replace(labelpath, ".jpg", ".txt", labelpath);
+    find_replace(labelpath, ".png", ".txt", labelpath);
+    find_replace(labelpath, ".JPG", ".txt", labelpath);
+    find_replace(labelpath, ".JPEG", ".txt", labelpath);
+    int count = 0;
+    //box_label *boxes = read_boxes(labelpath, &count);
+    box_label *boxes = read_boxes_remapping(labelpath, &count, id_remap, classes);
+    randomize_boxes(boxes, count);
+    correct_boxes(boxes, count, dx, dy, sx, sy, flip);
+    float x,y,w,h;
+    int id;
+    int i;
+
+    for (i = 0; i < count; ++i) {
+        x =  boxes[i].x;
+        y =  boxes[i].y;
+        w =  boxes[i].w;
+        h =  boxes[i].h;
+        id = boxes[i].id;
+
+        if (w < .005 || h < .005) continue;
+
+        int col = (int)(x*num_boxes);
+        int row = (int)(y*num_boxes);
+
+        x = x*num_boxes - col;
+        y = y*num_boxes - row;
+
+        int index = (col+row*num_boxes)*(5+classes);
+        if (truth[index]) continue;
+        truth[index++] = 1;
+
+        if (id < classes) truth[index+id] = 1;
+        index += classes;
+
+        truth[index++] = x;
+        truth[index++] = y;
+        truth[index++] = w;
+        truth[index++] = h;
+    }
+    free(boxes);
+}
+
 void fill_truth_region(char *path, float *truth, int classes, int num_boxes, int flip, float dx, float dy, float sx, float sy)
 {
     char labelpath[4096];
@@ -856,7 +905,7 @@ data load_data_iseg(int n, char **paths, int m, int w, int h, int classes, int b
     return d;
 }
 
-data load_data_region(int n, char **paths, int m, int w, int h, int size, int classes, float jitter, float hue, float saturation, float exposure)
+data load_data_region(int n, char **paths, int m, int w, int h, int size, int classes, float jitter, float hue, float saturation, float exposure, int *id_remap)
 {
     char **random_paths = get_random_paths(paths, n, m);
     int i;
@@ -901,7 +950,8 @@ data load_data_region(int n, char **paths, int m, int w, int h, int size, int cl
         random_distort_image(sized, hue, saturation, exposure);
         d.X.vals[i] = sized.data;
 
-        fill_truth_region(random_paths[i], d.y.vals[i], classes, size, flip, dx, dy, 1./sx, 1./sy);
+        //fill_truth_region(random_paths[i], d.y.vals[i], classes, size, flip, dx, dy, 1./sx, 1./sy);
+        fill_truth_region_remapping(random_paths[i], d.y.vals[i], classes, size, flip, dx, dy, 1./sx, 1./sy, id_remap);
 
         free_image(orig);
         free_image(cropped);
@@ -1103,7 +1153,7 @@ void *load_thread(void *ptr)
     } else if (a.type == SEGMENTATION_DATA){
         *a.d = load_data_seg(a.n, a.paths, a.m, a.w, a.h, a.classes, a.min, a.max, a.angle, a.aspect, a.hue, a.saturation, a.exposure, a.scale);
     } else if (a.type == REGION_DATA){
-        *a.d = load_data_region(a.n, a.paths, a.m, a.w, a.h, a.num_boxes, a.classes, a.jitter, a.hue, a.saturation, a.exposure);
+        *a.d = load_data_region(a.n, a.paths, a.m, a.w, a.h, a.num_boxes, a.classes, a.jitter, a.hue, a.saturation, a.exposure, a.id_remap);
     } else if (a.type == DETECTION_DATA){
         *a.d = load_data_detection(a.n, a.paths, a.m, a.w, a.h, a.num_boxes, a.classes, a.jitter, a.hue, a.saturation, a.exposure, a.id_remap);
     } else if (a.type == SWAG_DATA){
