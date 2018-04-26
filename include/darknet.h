@@ -214,6 +214,11 @@ struct layer{
 
     float * binary_weights;
 
+    float * scale_alpha;      //add
+    float * scale_beta;       //add
+    unsigned int * signWb;    //add
+    unsigned int * signIb;    //add
+
     float * biases;
     float * bias_updates;
 
