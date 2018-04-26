@@ -116,8 +116,8 @@ void gemm_nn_sign(int M, int N, int K,
         float *B, int ldb,
         float *C, int ldc)
 {
-    int i,j,k;
-    int word_index, bit_index;
+    unsigned int i,j,k;
+    unsigned int word_index, bit_index;
     unsigned int A_PART;
     //printf("K=%d\n",K);
     for(word_index = i = 0; i < M; ++i){
@@ -141,9 +141,9 @@ void gemm_nn_sign(int M, int N, int K,
         if(bit_index!=0)
             word_index++;
         float SCALE = fabs(scale[i]);
-        //printf("scale=%9.5f\n",SCALE);fflush(stdout);
         for(j = 0; j < N; ++j)
             C[i*ldc+j] *= SCALE;
+        //printf("scale=%9.5f\n",SCALE);fflush(stdout);
     }
 }
 

@@ -598,6 +598,7 @@ void validate_detector_recall(char *datacfg, char *cfgfile, char *weightfile)
         free_image(orig);
         free_image(sized);
     }
+    fprintf(stderr,"recall:%s\n",name_list);
 }
 
 void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filename, float thresh, float hier_thresh, char *outfile, int fullscreen)
