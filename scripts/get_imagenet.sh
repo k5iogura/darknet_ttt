@@ -7,7 +7,7 @@ do
     wget -i $i -P images/$dir -T 1 -t 1 -nc >& log
 
 echo clean up $dir
-for j in `find images/$dir`;
+for j in `find images/$dir -name \*.[jJ]\*`;
 do
 export JPEG=`file $j | grep JPEG | wc -l | awk '{print $1;}'`
 if [ $JPEG -eq 0 ];
