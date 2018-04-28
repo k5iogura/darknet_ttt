@@ -18,7 +18,7 @@ get_1list() {
 
     if [ ! -d images/$dir ];
     then
-        echo images/$dir not found
+        echo images/$dir dont retrieved >> images/lost-images.log
         return
     fi
 
@@ -35,6 +35,7 @@ get_1list() {
 }
 
 #main
+export max_launch=50
 if [ $# -ne 1 ];
 then
     echo Usage $0 lists
@@ -48,9 +49,19 @@ then
 fi
 
 #execute sub-shell with multi-process
+export c=0
 for i in `find $1 -name \*.txt`;
 do
     get_1list $i &
+    export c=`expr $c + 1`
+    if [ $c -eq $max_launch ];
+    then
+        echo wait $c sub-shell
+        export c=0
+        sleep 5
+        jobs
+        fg
+    fi
 done
 
 #wait sub-shell exiting
