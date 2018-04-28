@@ -26,6 +26,7 @@ extern void run_go(int argc, char **argv);
 extern void run_art(int argc, char **argv);
 extern void run_super(int argc, char **argv);
 extern void run_lsd(int argc, char **argv);
+extern void run_netdump(int argc, char **argv);
 
 void average(int argc, char *argv[])
 {
@@ -456,6 +457,8 @@ int main(int argc, char **argv)
         predict_classifier("cfg/imagenet1k.data", argv[2], argv[3], argv[4], 5);
     } else if (0 == strcmp(argv[1], "classifier")){
         run_classifier(argc, argv);
+    } else if (0 == strcmp(argv[1], "netdump")){
+        run_netdump(argc, argv);
     } else if (0 == strcmp(argv[1], "regressor")){
         run_regressor(argc, argv);
     } else if (0 == strcmp(argv[1], "segmenter")){
