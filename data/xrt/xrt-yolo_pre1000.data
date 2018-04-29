@@ -1,0 +1,6 @@
+classes= 1000
+train  = /home/ogura/20076433/imagenet/train_1000c.txt
+valid  = /home/ogura/20076433/imagenet/val_1000c.txt
+labels = /home/ogura/Darknet/darknet_sdl/data/xrt/darknet.labels.txt
+backup = XRTYL_PRE1000
+top = 5
