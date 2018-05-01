@@ -8,6 +8,7 @@
 *.pyc
 *.so
 *.a
+*.weights
 tags
 old/
 mnist/
