@@ -1,14 +1,19 @@
 #!/bin/bash
 
-#enable job control
-set -m
+#disable job control
+#set -m
+
+#checker for jpg
+check_premature_end() {
+    echo `od -t x2 $1 | tail -2 | grep d9ff | wc -l | awk '{if($1==0) print 1;else print 0}'`
+}
 
 #download and cleanup sub-shell
 get_1list() {
-    export dir=`basename $1 | sed 's/\.txt//'`
+    dir=`basename $1 | sed 's/\.txt//'`
     if [ -d images/$dir ];
     then
-        echo images/$dir already found, skipped >> images/${dir}.log
+#        echo images/$dir already found, skipped >> images/${dir}.log
         return
     fi
 
@@ -25,7 +30,12 @@ get_1list() {
     echo cleaning $dir >> images/${dir}.log
     for j in `find images/$dir -name \*.[jJ]\*`;
     do
-        export JPEG=`file $j | grep JPEG | wc -l | awk '{print $1;}'`
+        PEND=`check_premature_end $j`
+        if [ $PEND -eq 1 ];
+        then
+            rm -f $j
+        fi
+        JPEG=`file $j | grep JPEG | wc -l | awk '{print $1;}'`
         if [ $JPEG -eq 0 ];
         then
             rm -f $j
@@ -35,7 +45,7 @@ get_1list() {
 }
 
 #main
-export max_launch=50
+max_launch=50
 if [ $# -ne 1 ];
 then
     echo Usage $0 lists
@@ -49,20 +59,16 @@ then
 fi
 
 #execute sub-shell with multi-process
-export c=0
+c=0
 for i in `find $1 -name \*.txt`;
 do
-    get_1list $i &
-    export c=`expr $c + 1`
+    (get_1list $i) &
+    c=`expr $c + 1`
     if [ $c -eq $max_launch ];
     then
         echo wait $c sub-shell
-        export c=0
-        sleep 5
-        jobs
-        fg
+        wait
+        c=0
     fi
 done
 
-#wait sub-shell exiting
-#fg
