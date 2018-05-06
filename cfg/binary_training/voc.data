@@ -1,0 +1,14 @@
+classes= 20
+train  = /home/ogura/Darknet/weight/train.txt
+#train  = /home/ogura/20076433/DatasetScriptPosi3/train_wiki_f01_id14.txt
+#train  = /home/ogura/20076433/DatasetScriptPosi/train_voc_f01.all.txt
+#train  = /home/ogura/20076433/DatasetScriptPosi/train_imdb_f01.txt
+#valid  = /home/ogura/Darknet/darknet_sdl/2012.txt
+#valid  = /home/ogura/Darknet/darknet_sdl/2007.txt
+valid  = /home/ogura/20076433/dataset/2007_val.txt
+#valid  = /home/ogura/20076433/DatasetScriptPosi/train_wiki_yolo.txt
+#valid  = /home/ogura/Darknet/darknet_sdl/wiki_yolo.txt
+#valid  = /home/ogura/Darknet/weight/imdb_yolo.txt
+names = data/voc.names
+backup = DNY_VOC
+

@@ -1,0 +1,6 @@
+classes=1000
+train  = /home/ogura/20076433/imagenet/train_1000c.txt
+valid  = /home/ogura/20076433/imagenet/val_1000c.txt
+labels = /home/ogura/Darknet/darknet_sdl/darknet.labels.txt
+backup = DN53_VOC
+top = 5
