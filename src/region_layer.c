@@ -391,6 +391,13 @@ void correct_region_boxes(box *boxes, int n, int w, int h, int netw, int neth, i
 //               |           |
 //               |           |
 //
+//=layer.output=
+//           <-------------------------------------l.n ---------------------------------------------
+//           <---------------l.w*l.h----------------> <--------------l.w*l.h----------------> <-----
+//           ________________________________________ ________________________________________
+//           |box,box... |conf,conf... |prob,prob... |box,box... |conf,conf... |prob,prob... | .....
+//           ---------------------------------------- ----------------------------------------
+//
 void get_region_boxes(layer l, int w, int h, int netw, int neth, float thresh, float **probs, box *boxes, float **masks, int only_objectness, int *map, float tree_thresh, int relative)
 {
     int i,j,n,z;
