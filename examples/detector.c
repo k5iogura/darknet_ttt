@@ -537,7 +537,8 @@ void validate_detector_recall(char *datacfg, char *cfgfile, char *weightfile)
     int j, k;
     box *boxes = calloc(l.w*l.h*l.n, sizeof(box));
     float **probs = calloc(l.w*l.h*l.n, sizeof(float *));
-    for(j = 0; j < l.w*l.h*l.n; ++j) probs[j] = calloc(classes+1, sizeof(float *));
+    //for(j = 0; j < l.w*l.h*l.n; ++j) probs[j] = calloc(classes+1, sizeof(float *));//remove for DEBUG
+    for(j = 0; j < l.w*l.h*l.n; ++j) probs[j] = calloc(classes+1, sizeof(float));
 
     int m = plist->size;
     int i=0;
