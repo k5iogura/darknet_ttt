@@ -539,6 +539,7 @@ void validate_detector_recall(char *datacfg, char *cfgfile, char *weightfile)
     float **probs = calloc(l.w*l.h*l.n, sizeof(float *));
     //for(j = 0; j < l.w*l.h*l.n; ++j) probs[j] = calloc(classes+1, sizeof(float *));//remove for DEBUG
     for(j = 0; j < l.w*l.h*l.n; ++j) probs[j] = calloc(classes+1, sizeof(float));
+    float *best_probs = calloc(classes+1+1, sizeof(float)); //add
 
     int m = plist->size;
     int i=0;
@@ -579,6 +580,7 @@ void validate_detector_recall(char *datacfg, char *cfgfile, char *weightfile)
                 ++proposals;
             }
         }
+        int c;  //add
         for (j = 0; j < num_labels; ++j) {
             ++total;
             box t = {truth[j].x, truth[j].y, truth[j].w, truth[j].h};
@@ -586,11 +588,19 @@ void validate_detector_recall(char *datacfg, char *cfgfile, char *weightfile)
             for(k = 0; k < l.w*l.h*l.n; ++k){
                 float iou = box_iou(boxes[k], t);
                 if(probs[k][0] > thresh && iou > best_iou){
+                    for(c=0;c<classes+1;c++) best_probs[c] = probs[k][c];   //add
+                    best_probs[classes+1] = (float)truth[j].id;             //add
                     best_iou = iou;
                 }
             }
             avg_iou += best_iou;
             if(best_iou > iou_thresh){
+            if(0){  //add
+                //printf("%s\n",labelpath);               //add
+                printf("   [%5.0f]:",best_probs[0]);  //add
+                for(c=0;c<classes+1;c++) printf("%4.2f ",best_probs[c]);    //add
+                printf("\n");   //add
+            }
                 ++correct;
             }
         }
