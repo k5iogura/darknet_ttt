@@ -200,6 +200,8 @@ void cudnn_convolutional_setup(layer *l)
 convolutional_layer make_convolutional_layer(int batch, int h, int w, int c, int n, int size, int stride, int padding, ACTIVATION activation, int batch_normalize, int binary, int xnor, int adam)
 {
     int i;
+    float Bn=0;
+    static float Total_Bn=0;
     convolutional_layer l = {0};
     l.type = CONVOLUTIONAL;
 
@@ -351,7 +353,9 @@ convolutional_layer make_convolutional_layer(int batch, int h, int w, int c, int
     l.activation = activation;
 
     //fprintf(stderr, "conv  %5d %2d x%2d /%2d  %4d x%4d x%4d   ->  %4d x%4d x%4d\n", n, size, size, stride, w, h, c, l.out_w, l.out_h, l.out_c);
-    fprintf(stderr, "conv  %5d %2d x%2d /%2d  %4d x%4d x%4d   ->  %4d x%4d x%4d  %5.3f BFLOPs\n", n, size, size, stride, w, h, c, l.out_w, l.out_h, l.out_c, (2.0 * l.n * l.size*l.size*l.c * l.out_h*l.out_w)/1000000000.);
+    Bn = (2.0 * l.n * l.size*l.size*l.c * l.out_h*l.out_w)/1000000000.;
+    Total_Bn+= Bn;
+    fprintf(stderr, "conv  %5d %2d x%2d /%2d  %4d x%4d x%4d   ->  %4d x%4d x%4d  %5.3f (%5.3f)BFLOPs\n", n, size, size, stride, w, h, c, l.out_w, l.out_h, l.out_c, Bn, Total_Bn);
 
     return l;
 }
