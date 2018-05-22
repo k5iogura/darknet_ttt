@@ -1,0 +1,99 @@
+layer     filters    size              input                output
+    0 conv     32  3 x 3 / 1   416 x 416 x   3   ->   416 x 416 x  32  0.299 (0.299)BFLOPs
+    1 conv     64  3 x 3 / 2   416 x 416 x  32   ->   208 x 208 x  64  1.595 (1.894)BFLOPs
+    2 conv     32  1 x 1 / 1   208 x 208 x  64   ->   208 x 208 x  32  0.177 (2.071)BFLOPs
+    3 conv     64  3 x 3 / 1   208 x 208 x  32   ->   208 x 208 x  64  1.595 (3.666)BFLOPs
+    4 Shortcut Layer: 1
+    5 conv    128  3 x 3 / 2   208 x 208 x  64   ->   104 x 104 x 128  1.595 (5.261)BFLOPs
+    6 conv     64  1 x 1 / 1   104 x 104 x 128   ->   104 x 104 x  64  0.177 (5.438)BFLOPs
+    7 conv    128  3 x 3 / 1   104 x 104 x  64   ->   104 x 104 x 128  1.595 (7.033)BFLOPs
+    8 Shortcut Layer: 5
+    9 conv     64  1 x 1 / 1   104 x 104 x 128   ->   104 x 104 x  64  0.177 (7.210)BFLOPs
+   10 conv    128  3 x 3 / 1   104 x 104 x  64   ->   104 x 104 x 128  1.595 (8.805)BFLOPs
+   11 Shortcut Layer: 8
+   12 conv    256  3 x 3 / 2   104 x 104 x 128   ->    52 x  52 x 256  1.595 (10.400)BFLOPs
+   13 conv    128  1 x 1 / 1    52 x  52 x 256   ->    52 x  52 x 128  0.177 (10.577)BFLOPs
+   14 conv    256  3 x 3 / 1    52 x  52 x 128   ->    52 x  52 x 256  1.595 (12.172)BFLOPs
+   15 Shortcut Layer: 12
+   16 conv    128  1 x 1 / 1    52 x  52 x 256   ->    52 x  52 x 128  0.177 (12.349)BFLOPs
+   17 conv    256  3 x 3 / 1    52 x  52 x 128   ->    52 x  52 x 256  1.595 (13.944)BFLOPs
+   18 Shortcut Layer: 15
+   19 conv    128  1 x 1 / 1    52 x  52 x 256   ->    52 x  52 x 128  0.177 (14.121)BFLOPs
+   20 conv    256  3 x 3 / 1    52 x  52 x 128   ->    52 x  52 x 256  1.595 (15.716)BFLOPs
+   21 Shortcut Layer: 18
+   22 conv    128  1 x 1 / 1    52 x  52 x 256   ->    52 x  52 x 128  0.177 (15.893)BFLOPs
+   23 conv    256  3 x 3 / 1    52 x  52 x 128   ->    52 x  52 x 256  1.595 (17.488)BFLOPs
+   24 Shortcut Layer: 21
+   25 conv    128  1 x 1 / 1    52 x  52 x 256   ->    52 x  52 x 128  0.177 (17.666)BFLOPs
+   26 conv    256  3 x 3 / 1    52 x  52 x 128   ->    52 x  52 x 256  1.595 (19.260)BFLOPs
+   27 Shortcut Layer: 24
+   28 conv    128  1 x 1 / 1    52 x  52 x 256   ->    52 x  52 x 128  0.177 (19.438)BFLOPs
+   29 conv    256  3 x 3 / 1    52 x  52 x 128   ->    52 x  52 x 256  1.595 (21.033)BFLOPs
+   30 Shortcut Layer: 27
+   31 conv    128  1 x 1 / 1    52 x  52 x 256   ->    52 x  52 x 128  0.177 (21.210)BFLOPs
+   32 conv    256  3 x 3 / 1    52 x  52 x 128   ->    52 x  52 x 256  1.595 (22.805)BFLOPs
+   33 Shortcut Layer: 30
+   34 conv    128  1 x 1 / 1    52 x  52 x 256   ->    52 x  52 x 128  0.177 (22.982)BFLOPs
+   35 conv    256  3 x 3 / 1    52 x  52 x 128   ->    52 x  52 x 256  1.595 (24.577)BFLOPs
+   36 Shortcut Layer: 33
+   37 conv    512  3 x 3 / 2    52 x  52 x 256   ->    26 x  26 x 512  1.595 (26.172)BFLOPs
+   38 conv    256  1 x 1 / 1    26 x  26 x 512   ->    26 x  26 x 256  0.177 (26.349)BFLOPs
+   39 conv    512  3 x 3 / 1    26 x  26 x 256   ->    26 x  26 x 512  1.595 (27.944)BFLOPs
+   40 Shortcut Layer: 37
+   41 conv    256  1 x 1 / 1    26 x  26 x 512   ->    26 x  26 x 256  0.177 (28.121)BFLOPs
+   42 conv    512  3 x 3 / 1    26 x  26 x 256   ->    26 x  26 x 512  1.595 (29.716)BFLOPs
+   43 Shortcut Layer: 40
+   44 conv    256  1 x 1 / 1    26 x  26 x 512   ->    26 x  26 x 256  0.177 (29.893)BFLOPs
+   45 conv    512  3 x 3 / 1    26 x  26 x 256   ->    26 x  26 x 512  1.595 (31.488)BFLOPs
+   46 Shortcut Layer: 43
+   47 conv    256  1 x 1 / 1    26 x  26 x 512   ->    26 x  26 x 256  0.177 (31.665)BFLOPs
+   48 conv    512  3 x 3 / 1    26 x  26 x 256   ->    26 x  26 x 512  1.595 (33.260)BFLOPs
+   49 Shortcut Layer: 46
+   50 conv    256  1 x 1 / 1    26 x  26 x 512   ->    26 x  26 x 256  0.177 (33.437)BFLOPs
+   51 conv    512  3 x 3 / 1    26 x  26 x 256   ->    26 x  26 x 512  1.595 (35.032)BFLOPs
+   52 Shortcut Layer: 49
+   53 conv    256  1 x 1 / 1    26 x  26 x 512   ->    26 x  26 x 256  0.177 (35.209)BFLOPs
+   54 conv    512  3 x 3 / 1    26 x  26 x 256   ->    26 x  26 x 512  1.595 (36.804)BFLOPs
+   55 Shortcut Layer: 52
+   56 conv    256  1 x 1 / 1    26 x  26 x 512   ->    26 x  26 x 256  0.177 (36.981)BFLOPs
+   57 conv    512  3 x 3 / 1    26 x  26 x 256   ->    26 x  26 x 512  1.595 (38.576)BFLOPs
+   58 Shortcut Layer: 55
+   59 conv    256  1 x 1 / 1    26 x  26 x 512   ->    26 x  26 x 256  0.177 (38.753)BFLOPs
+   60 conv    512  3 x 3 / 1    26 x  26 x 256   ->    26 x  26 x 512  1.595 (40.348)BFLOPs
+   61 Shortcut Layer: 58
+   62 conv   1024  3 x 3 / 2    26 x  26 x 512   ->    13 x  13 x1024  1.595 (41.943)BFLOPs
+   63 conv    512  1 x 1 / 1    13 x  13 x1024   ->    13 x  13 x 512  0.177 (42.120)BFLOPs
+   64 conv   1024  3 x 3 / 1    13 x  13 x 512   ->    13 x  13 x1024  1.595 (43.715)BFLOPs
+   65 Shortcut Layer: 62
+   66 conv    512  1 x 1 / 1    13 x  13 x1024   ->    13 x  13 x 512  0.177 (43.893)BFLOPs
+   67 conv   1024  3 x 3 / 1    13 x  13 x 512   ->    13 x  13 x1024  1.595 (45.487)BFLOPs
+   68 Shortcut Layer: 65
+   69 conv    512  1 x 1 / 1    13 x  13 x1024   ->    13 x  13 x 512  0.177 (45.665)BFLOPs
+   70 conv   1024  3 x 3 / 1    13 x  13 x 512   ->    13 x  13 x1024  1.595 (47.260)BFLOPs
+   71 Shortcut Layer: 68
+   72 conv    512  1 x 1 / 1    13 x  13 x1024   ->    13 x  13 x 512  0.177 (47.437)BFLOPs
+   73 conv   1024  3 x 3 / 1    13 x  13 x 512   ->    13 x  13 x1024  1.595 (49.032)BFLOPs
+   74 Shortcut Layer: 71
+   75 conv    512  1 x 1 / 1    13 x  13 x1024   ->    13 x  13 x 512  0.177 (49.209)BFLOPs
+   76 conv   1024  3 x 3 / 1    13 x  13 x 512   ->    13 x  13 x1024  1.595 (50.804)BFLOPs
+   77 conv    512  1 x 1 / 1    13 x  13 x1024   ->    13 x  13 x 512  0.177 (50.981)BFLOPs
+   78 conv   1024  3 x 3 / 1    13 x  13 x 512   ->    13 x  13 x1024  1.595 (52.576)BFLOPs
+   79 conv    512  1 x 1 / 1    13 x  13 x1024   ->    13 x  13 x 512  0.177 (52.753)BFLOPs
+   80 conv   1024  3 x 3 / 1    13 x  13 x 512   ->    13 x  13 x1024  1.595 (54.348)BFLOPs
+   81 conv     75  1 x 1 / 1    13 x  13 x1024   ->    13 x  13 x  75  0.026 (54.374)BFLOPs
+   82 Type not recognized: [yolo]
+Unused field: 'mask = 6,7,8'
+Unused field: 'anchors = 10,13,16,30,33,23,30,61,62,45,59,119,116,90,156,198,373,326'
+Unused field: 'classes = 20'
+Unused field: 'num = 9'
+Unused field: 'jitter = .3'
+Unused field: 'ignore_thresh = .5'
+Unused field: 'truth_thresh = 1'
+Unused field: 'random = 1'
+   83 route  79
+   84 conv    256  1 x 1 / 1    13 x  13 x 512   ->    13 x  13 x 256  0.044 (54.418)BFLOPs
+   85 Type not recognized: [upsample]
+Unused field: 'stride = 2'
+   86 route  85 61
+   87 Layer before convolutional layer must output image.: Cannot allocate memory
+darknet: ./src/utils.c:303: error: Assertion `0' failed.
