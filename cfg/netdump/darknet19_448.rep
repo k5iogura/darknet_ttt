@@ -1,0 +1,4 @@
+layer     filters    size              input                output
+    0 Cuda malloc failed
+: File exists
+darknet: ./src/utils.c:303: error: Assertion `0' failed.
