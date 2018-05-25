@@ -67,13 +67,20 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
     while(get_current_batch(net) < net.max_batches){
         if(l.random && count++%10 == 0){
             printf("Resizing\n");
-            //int dim = (rand() % 10 + 10) * 32;    //remove
-            int dim = (rand() % 4 + 6) * 32;        //add
+            //int dim = (rand() % 10 + 10) * 32;    //remove original
+            //int dim = (rand() % 4 + 6) * 32;        //add
+            int dim;
+            int iw,ih;                      //add
+            ih = (rand() % l.h/2 + l.h - 2);        //add
+            iw = ih + 2;                        //add
+            dim= iw * 32;                       //add
+            args.w = dim;                       //add
+            dim= ih * 32;
+            args.h = dim;                       //add
             if (get_current_batch(net)+200 > net.max_batches) dim = 608;
-            //int dim = (rand() % 4 + 16) * 32;
-            printf("%d\n", dim);
-            args.w = dim;
-            args.h = dim;
+            printf("to W/H %d %d\n", args.w,args.h);
+            //args.w = dim; //remove original
+            //args.h = dim; //remove original
 
             pthread_join(load_thread, 0);
             train = buffer;
@@ -81,7 +88,8 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
             load_thread = load_data(args);
 
             for(i = 0; i < ngpus; ++i){
-                resize_network(nets + i, dim, dim);
+                //resize_network(nets + i, dim, dim);
+                resize_network(nets + i, args.w, args.h);
             }
             net = nets[0];
         }
