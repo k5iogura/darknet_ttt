@@ -1,0 +1,21 @@
+layer     filters    size              input                output
+    0 conv     32  3 x 3 / 1   128 x 128 x   3   ->   128 x 128 x  32  0.028 (0.028)BFLOPs
+    1 max          2 x 2 / 2   128 x 128 x  32   ->    64 x  64 x  32
+    2 conv     64  3 x 3 / 1    64 x  64 x  32   ->    64 x  64 x  64  0.151 (0.179)BFLOPs
+    3 conv     32  1 x 1 / 1    64 x  64 x  64   ->    64 x  64 x  32  0.017 (0.196)BFLOPs
+    4 conv     32  1 x 1 / 1    64 x  64 x  32   ->    64 x  64 x  32  0.008 (0.204)BFLOPs
+    5 max          2 x 2 / 2    64 x  64 x  32   ->    32 x  32 x  32
+    6 conv     64  3 x 3 / 1    32 x  32 x  32   ->    32 x  32 x  64  0.038 (0.242)BFLOPs
+    7 conv     32  1 x 1 / 1    32 x  32 x  64   ->    32 x  32 x  32  0.004 (0.246)BFLOPs
+    8 conv     32  1 x 1 / 1    32 x  32 x  32   ->    32 x  32 x  32  0.002 (0.249)BFLOPs
+    9 avg                       32 x  32 x  32   ->    32
+   10 conv      4  1 x 1 / 1     1 x   1 x  32   ->     1 x   1 x   4  0.000 (0.249)BFLOPs
+   11 Detection Layer
+softmax: Using default '0'
+sqrt: Using default '0'
+coord_scale: Using default '1.000000'
+forced: Using default '0'
+object_scale: Using default '1.000000'
+noobject_scale: Using default '1.000000'
+class_scale: Using default '1.000000'
+Unused field: 'boxes = 1'
