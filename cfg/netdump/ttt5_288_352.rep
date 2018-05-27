@@ -1,0 +1,14 @@
+layer     filters    size              input                output
+    0 conv     16  3 x 3 / 1   352 x 288 x   3   ->   352 x 288 x  16  0.088 (0.088)BFLOPs
+    1 max          2 x 2 / 2   352 x 288 x  16   ->   176 x 144 x  16
+    2 conv     32  3 x 3 / 1   176 x 144 x  16   ->   176 x 144 x  32  0.234 (0.321)BFLOPs
+    3 max          4 x 4 / 4   176 x 144 x  32   ->    44 x  36 x  32
+    4 conv    128  3 x 3 / 1    44 x  36 x  32   ->    44 x  36 x 128  0.117 (0.438)BFLOPs
+    5 max          4 x 4 / 4    44 x  36 x 128   ->    11 x   9 x 128
+    6 conv    512  3 x 3 / 1    11 x   9 x 128   ->    11 x   9 x 512  0.117 (0.555)BFLOPs
+    7 conv    512  3 x 3 / 1    11 x   9 x 512   ->    11 x   9 x 512  0.467 (1.022)BFLOPs
+    8 conv    256  1 x 1 / 1    11 x   9 x 512   ->    11 x   9 x 256  0.026 (1.048)BFLOPs
+    9 conv    512  3 x 3 / 1    11 x   9 x 256   ->    11 x   9 x 512  0.234 (1.281)BFLOPs
+   10 conv    125  1 x 1 / 1    11 x   9 x 512   ->    11 x   9 x 125  0.013 (1.294)BFLOPs
+   11 region
+mask_scale: Using default '1.000000'
