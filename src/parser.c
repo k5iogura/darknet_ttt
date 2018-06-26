@@ -897,6 +897,11 @@ void save_weights_upto(network net, char *filename, int cutoff)
     int major = 0;
     int minor = 2;
     int revision = 0;
+    if(sizeof(size_t)==8){  // on 64bit OS
+        if(10*major + minor < 2) {minor=2;major=0;}
+    }else{                  // on 32bit OS
+        if(10*major + minor >=2) {minor=1;major=0;}
+    }
     fwrite(&major, sizeof(int), 1, fp);
     fwrite(&minor, sizeof(int), 1, fp);
     fwrite(&revision, sizeof(int), 1, fp);
@@ -1112,8 +1117,8 @@ void load_weights_upto(network *net, char *filename, int start, int cutoff)
     fread(&revision, sizeof(int), 1, fp);
     if ((major*10 + minor) >= 2){ // Training on 64bit OS (seen is 8Bytes)
         printf(
-            "64bit OS train %s major/minor/revision = %d/%d/%d sizeof(size_t)=%ld\n",
-            filename,major,minor,revision,sizeof(size_t)
+            "64bit OS trained major/minor/revision = %d/%d/%d sizeof(size_t)=%ld\n",
+            major,minor,revision,sizeof(size_t)
         );
         if(sizeof(size_t)==8)     // 64bit OS read
             fread(net->seen, sizeof(size_t), 1, fp);
@@ -1129,8 +1134,8 @@ void load_weights_upto(network *net, char *filename, int start, int cutoff)
             fread(&iseen, sizeof(int), 1, fp);
             *net->seen = iseen;
             printf(
-                "32bit OS train %s major/minor/revision = %d/%d/%d sizeof(size_t)=%ld\n",
-                filename,major,minor,revision,sizeof(size_t)
+                "32bit OS trained major/minor/revision = %d/%d/%d sizeof(size_t)=%ld\n",
+                major,minor,revision,sizeof(size_t)
             );
         }
     }
