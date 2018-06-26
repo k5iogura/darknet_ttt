@@ -1105,17 +1105,34 @@ void load_weights_upto(network *net, char *filename, int start, int cutoff)
     if(!fp) file_error(filename);
 
     int major;
-    int minor;
+    int minor;  // 0,1 : Training on 32bit OS / 2,3.. : on 64bit OS  <-K.O comment
     int revision;
     fread(&major, sizeof(int), 1, fp);
     fread(&minor, sizeof(int), 1, fp);
     fread(&revision, sizeof(int), 1, fp);
-    if ((major*10 + minor) >= 2){
-        fread(net->seen, sizeof(size_t), 1, fp);
-    } else {
-        int iseen = 0;
-        fread(&iseen, sizeof(int), 1, fp);
-        *net->seen = iseen;
+    if ((major*10 + minor) >= 2){ // Training on 64bit OS (seen is 8Bytes)
+        printf(
+            "64bit OS train %s major/minor/revision = %d/%d/%d sizeof(size_t)=%ld\n",
+            filename,major,minor,revision,sizeof(size_t)
+        );
+        if(sizeof(size_t)==8)     // 64bit OS read
+            fread(net->seen, sizeof(size_t), 1, fp);
+        else{                     // 32bit OS read
+            int iseen = 0;
+            fread(&iseen, sizeof(int), 1, fp);
+            fread(&iseen, sizeof(int), 1, fp);
+            *net->seen = iseen;
+        }
+    } else {                      // Training on 32bit OS (seen is 4Bytes)
+        if(sizeof(size_t)==8){    // 64bit or 32bit OS read
+            int iseen = 0;
+            fread(&iseen, sizeof(int), 1, fp);
+            *net->seen = iseen;
+            printf(
+                "32bit OS train %s major/minor/revision = %d/%d/%d sizeof(size_t)=%ld\n",
+                filename,major,minor,revision,sizeof(size_t)
+            );
+        }
     }
     int transpose = (major > 1000) || (minor > 1000);
 
