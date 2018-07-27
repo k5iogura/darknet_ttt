@@ -480,6 +480,7 @@ void forward_convolutional_layer_cpu(convolutional_layer l, network net)
     int out_h = l.out_h;
     int out_w = l.out_w;
     int i;
+    const int pre_norm=1;
 
     fill_cpu(l.outputs*l.batch, 0, l.output, 1);
     if(l.binary){
@@ -509,6 +510,23 @@ void forward_convolutional_layer_cpu(convolutional_layer l, network net)
     float *b = net.workspace;
     float *c = l.output;
 
+    if(pre_norm && l.batch_normalize){
+        int spatial = l.size*l.size*l.c;
+        int filters = l.out_c;
+        int batch   = l.batch;
+        float *x        = l.weights;
+        float *variance = l.rolling_variance;
+        float *scale    = l.scales;
+        int b, f, i;
+        for(b = 0; b < batch; ++b){
+            for(f = 0; f < filters; ++f){
+                for(i = 0; i < spatial; ++i){ 
+                    int index = b*filters*spatial + f*spatial + i;
+                    x[index] *= scale[f]/(sqrt(variance[f]) + .000001f);   //removed
+                }
+            }
+        }
+    }
     for(i = 0; i < l.batch; ++i){
         im2col_cpu(net.input, l.c, l.h, l.w, 
                 l.size, l.stride, l.pad, b);
@@ -522,7 +540,76 @@ void forward_convolutional_layer_cpu(convolutional_layer l, network net)
     }
 
     if(l.batch_normalize){
-        forward_batchnorm_layer(l, net);
+        if(pre_norm){   //normalize and shift and scale
+            int size = l.out_h*l.out_w;
+            int n    = l.out_c;
+            int batch = l.batch;
+            float *output   = l.output;
+            float *biases   = l.biases;
+            float *mean     = l.rolling_mean;
+            float *variance = l.rolling_variance;
+            float *scale    = l.scales;
+            int i,j,b;
+            for(b = 0; b < batch; ++b){
+                for(i = 0; i < n; ++i){
+                    for(j = 0; j < size; ++j){
+                        output[(b*n + i)*size + j] -= scale[i] * mean[i]/(sqrt(variance[i]) + .000001f);
+                        output[(b*n + i)*size + j] += biases[i];
+                    }
+                }
+            }
+        }
+        ////forward_batchnorm_layer(l, net);
+        //normalize_cpu(l.output, l.rolling_mean, l.rolling_variance, l.batch, l.out_c, l.out_h*l.out_w);
+        //scale_bias(l.output, l.scales, l.batch, l.out_c, l.out_h*l.out_w);
+        //add_bias(l.output, l.biases, l.batch, l.out_c, l.out_h*l.out_w);
+        if(!pre_norm){  //same as normalize_cpu
+            int spatial = l.out_h*l.out_w;
+            int filters = l.out_c;
+            int batch   = l.batch;
+            float *x        = l.output;
+            float *mean     = l.rolling_mean;
+            float *variance = l.rolling_variance;
+            int b, f, i;
+            for(b = 0; b < batch; ++b){
+                for(f = 0; f < filters; ++f){
+                    for(i = 0; i < spatial; ++i){ 
+                        int index = b*filters*spatial + f*spatial + i;
+                        x[index] = (x[index] - mean[f])/(sqrt(variance[f]) + .000001f);   //removed
+                    }
+                }
+            }
+        }
+        if(!pre_norm){   //same as scale_bias
+            int size = l.out_h*l.out_w;
+            int n    = l.out_c;
+            int batch = l.batch;
+            float *output = l.output;
+            float *scales = l.scales;
+            int i,j,b;
+            for(b = 0; b < batch; ++b){
+                for(i = 0; i < n; ++i){
+                    for(j = 0; j < size; ++j){
+                        output[(b*n + i)*size + j] *= scales[i];
+                    }
+                }
+            }
+        }
+        if(!pre_norm){   //same as shift_bias
+            int size = l.out_h*l.out_w;
+            int n    = l.out_c;
+            int batch = l.batch;
+            float *output = l.output;
+            float *biases = l.biases;
+            int i,j,b;
+            for(b = 0; b < batch; ++b){
+                for(i = 0; i < n; ++i){
+                    for(j = 0; j < size; ++j){
+                        output[(b*n + i)*size + j] += biases[i];
+                    }
+                }
+            }
+        }
     } else {
         add_bias(l.output, l.biases, l.batch, l.n, out_h*out_w);
     }

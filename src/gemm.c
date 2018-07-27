@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include "fp16.h"
 
 void gemm_bin(int M, int N, int K, float ALPHA, 
         char  *A, int lda, 
@@ -72,7 +73,71 @@ void gemm(int TA, int TB, int M, int N, int K, float ALPHA,
     gemm_cpu( TA,  TB,  M, N, K, ALPHA,A,lda, B, ldb,BETA,C,ldc);
 }
 
+#define FRACT 14
+#define FIXFP int
+#define FIXFPx2 long
+//void gemm_nn(int M, int N, int K, float ALPHA, 
+void gemm_nn_fp(int M, int N, int K, float ALPHA, 
+        float *A, int lda, 
+        float *B, int ldb,
+        float *C, int ldc)
+{
+    int i,j,k;
+    float maxx,minn;
+    float maxA,minA;
+    float maxC,minC;
+    #pragma omp parallel for
+    for(i = 0,maxx=-10000,maxA=-10000,minn=10000,minA=10000,maxC=-10000,minC=10000; i < M; ++i){
+        for(k = 0; k < K; ++k){
+            register float A_PART = ALPHA*A[i*lda+k];
+            FIXFP fxA_PART = (FIXFP)round(A_PART * pow(2,FRACT));
+            maxA=(maxA>A[i*lda+k])?maxA:A[i*lda+k];
+            minA=(minA<A[i*lda+k])?minA:A[i*lda+k];
+            for(j = 0; j < N; ++j){
+                maxx=(maxx>B[k*ldb+j])?maxx:B[k*ldb+j];
+                minn=(minn<B[k*ldb+j])?minn:B[k*ldb+j];
+                //C[i*ldc+j] += A_PART*B[k*ldb+j];
+                FIXFP fxB = (FIXFP)(round(B[k*ldb+j] * pow(2,FRACT)));
+                FIXFP fxC = ((FIXFPx2)fxA_PART * (FIXFPx2)fxB) >> FRACT;
+                float Cn = fxC * pow(2,-FRACT);
+                C[i*ldc+j] += Cn;
+            }
+        }
+        for(j = 0; j < N; ++j){maxC=(maxC>C[i*ldc+j])?maxC:C[i*ldc+j]; minC=(minC<C[i*ldc+j])?minC:C[i*ldc+j];}
+    }
+    printf("A/B/C max/min = %f %f / %f %f / %f %f\n",maxA,minA,maxx,minn,maxC,minC);
+}
+
+//void gemm_nn_hf(int M, int N, int K, float ALPHA, 
 void gemm_nn(int M, int N, int K, float ALPHA, 
+        float *A, int lda, 
+        float *B, int ldb,
+        float *C, int ldc)
+{
+    int i,j,k;
+    float maxx,minn;
+    float maxA,minA;
+    float maxC,minC;
+    #pragma omp parallel for
+    for(i = 0,maxx=-10000,maxA=-10000,minn=10000,minA=10000,maxC=-10000,minC=10000; i < M; ++i){
+        for(k = 0; k < K; ++k){
+            register float A_PART = ALPHA*A[i*lda+k];
+            fp16 hfA_PART = f2h(A_PART);
+            maxA=(maxA>A[i*lda+k])?maxA:A[i*lda+k];
+            minA=(minA<A[i*lda+k])?minA:A[i*lda+k];
+            for(j = 0; j < N; ++j){
+                maxx=(maxx>B[k*ldb+j])?maxx:B[k*ldb+j];
+                minn=(minn<B[k*ldb+j])?minn:B[k*ldb+j];
+                fp16 hfB = f2h(B[k*ldb+j]);
+                C[i*ldc+j] += h2f(fp16_prod(hfA_PART , hfB));
+            }
+        }
+        for(j = 0; j < N; ++j){maxC=(maxC>C[i*ldc+j])?maxC:C[i*ldc+j]; minC=(minC<C[i*ldc+j])?minC:C[i*ldc+j];}
+    }
+    printf("A/B/C max/min = %f %f / %f %f / %f %f\n",maxA,minA,maxx,minn,maxC,minC);
+}
+
+void Gemm_nn(int M, int N, int K, float ALPHA, 
         float *A, int lda, 
         float *B, int ldb,
         float *C, int ldc)
