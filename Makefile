@@ -3,9 +3,11 @@ export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
 GPU=0
 CUDNN=0
 OPENCV?=1
-OPENMP=0
 DEBUG?=0
-FP16=1
+FPGA?=0
+FPGA_EMU?=0
+FP32=0
+BLAS=0
 
 ARCH= \
       -gencode arch=compute_30,code=sm_30 \
@@ -23,16 +25,42 @@ EXEC=darknet
 OBJDIR=./obj/
 
 CC=gcc
+CXX=g++
 NVCC=nvcc 
 AR=ar
 ARFLAGS=rcs
 OPTS=-Ofast
-LDFLAGS= -lm -pthread 
+LDFLAGS= $(shell pkg-config --libs IlmBase) -lm -pthread 
 COMMON= -Iinclude/ -Isrc/
 CFLAGS=-Wall -Wno-unknown-pragmas -Wfatal-errors -fPIC
 
-ifeq ($(OPENMP), 1) 
-CFLAGS+= -fopenmp
+ifeq ($(BLAS),1)
+CFLAGS+= -DCBLAS $(shell pkg-config --cflags openblas)
+LDFLAGS+=$(shell pkg-config --libs openblas)
+endif
+
+AOCX=gemm1.aocx
+ifeq ($(FPGA_EMU), 1) 
+FPGA_DEVICE=-march=emulator
+CFLAGS+= -DFPGA
+OBJ+=gemm_fpga.o
+CFLAGS+= $(shell aocl compile-config)
+LDFLAGS+= $(shell aocl link-config)
+else
+ifeq (%(FPGA),1)
+FPGA_DEVICE=
+CFLAGS+= -DFPGA
+endif
+OBJ+=gemm_fpga.o
+CFLAGS+= $(shell aocl compile-config)
+LDFLAGS+= $(shell aocl link-config)
+endif
+
+ifeq ($(FP32),1)
+CFLAGS+= -DFP32
+GEMM1_CL= ocl/gemm1_float.cl
+else
+GEMM1_CL= ocl/gemm1_halfxf_halfx9.cl
 endif
 
 ifeq ($(DEBUG), 1) 
@@ -61,10 +89,6 @@ CFLAGS+= -DGPU
 LDFLAGS+= -L/usr/local/cuda/lib64 -lcuda -lcudart -lcublas -lcurand
 endif
 
-ifeq ($(FP16),1)
-LDFLAGS+= -IlmBase -lstdc++
-endif
-
 ifeq ($(CUDNN), 1) 
 COMMON+= -DCUDNN 
 CFLAGS+= -DCUDNN
@@ -87,7 +111,7 @@ all: obj  results $(SLIB) $(ALIB) $(EXEC)
 
 
 $(EXEC): $(EXECOBJ) $(ALIB)
-	$(CC) $(COMMON) $(CFLAGS) $^ -o $@ $(LDFLAGS) $(ALIB)
+	$(CC) $(COMMON) $(CFLAGS) $^ -o $@ $(LDFLAGS) $(ALIB) -lstdc++
 
 $(ALIB): $(OBJS)
 	$(AR) $(ARFLAGS) $@ $^
@@ -98,11 +122,14 @@ $(SLIB): $(OBJS)
 $(OBJDIR)%.o: %.c $(DEPS)
 	$(CC) $(COMMON) $(CFLAGS) -c $< -o $@
 
-$(OBJDIR)%.o: %.cpp $(DEPS)
-	g++ $(COMMON) $(CFLAGS) -c $< -o $@
-
 $(OBJDIR)%.o: %.cu $(DEPS)
 	$(NVCC) $(ARCH) $(COMMON) --compiler-options "$(CFLAGS)" -c $< -o $@
+
+$(OBJDIR)fp16.o:src/fp16.cpp
+	$(CXX) -c -o $@ $^ -I /usr/local/include $(CFLAGS)
+
+$(AOCX):$(GEMM1_CL)
+	aoc $(FPGA_DEVICE) -g -v -report $^ -o $(@)
 
 obj:
 	mkdir -p obj
@@ -114,5 +141,5 @@ results:
 .PHONY: clean
 
 clean:
-	rm -rf $(OBJS) $(SLIB) $(ALIB) $(EXEC) $(EXECOBJ)
+	rm -rf $(OBJS) $(SLIB) $(ALIB) $(EXEC) $(EXECOBJ) $(AOCX)
 
