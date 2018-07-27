@@ -240,6 +240,7 @@ convolutional_layer make_convolutional_layer(int batch, int h, int w, int c, int
     l.inputs = l.w * l.h * l.c;
 
     l.output = calloc(l.batch*l.outputs, sizeof(float));
+    l.biased_output = calloc(l.batch*l.outputs, sizeof(float)); //add
     l.delta  = calloc(l.batch*l.outputs, sizeof(float));
 
     //l.forward = forward_convolutional_layer;  //remove
@@ -278,6 +279,7 @@ convolutional_layer make_convolutional_layer(int batch, int h, int w, int c, int
         l.rolling_variance = calloc(n, sizeof(float));
         l.x = calloc(l.batch*l.outputs, sizeof(float));
         l.x_norm = calloc(l.batch*l.outputs, sizeof(float));
+        l.done_norm = 0;    //add
     }
     if(adam){
         l.m = calloc(c*n*size*size, sizeof(float));
@@ -480,9 +482,34 @@ void forward_convolutional_layer_cpu(convolutional_layer l, network net)
     int out_h = l.out_h;
     int out_w = l.out_w;
     int i;
-    const int pre_norm=1;
+    //const int pre_norm=1;   //OK
+    //const int pre_norm=2; //OK
+    const int pre_norm=0;
 
     fill_cpu(l.outputs*l.batch, 0, l.output, 1);
+    if(pre_norm == 2 && l.batch_normalize){
+        if(!l.done_norm ){   //normalize and shift and scale
+            int size = l.out_h*l.out_w;
+            int n    = l.out_c;
+            int batch = l.batch;
+            float *biased_output = l.biased_output;
+            float *biases   = l.biases;
+            float *mean     = l.rolling_mean;
+            float *variance = l.rolling_variance;
+            float *scale    = l.scales;
+            int i,j,b;
+            for(b = 0; b < batch; ++b){
+                for(i = 0; i < n; ++i){
+                    for(j = 0; j < size; ++j){
+                        biased_output[(b*n + i)*size + j] -= scale[i] * mean[i]/(sqrt(variance[i]) + .000001f);
+                        biased_output[(b*n + i)*size + j] += biases[i];
+                    }
+                }
+            }
+        }
+        copy_cpu(l.outputs*l.batch, l.biased_output, 1, l.output, 1);
+    }
+
     if(l.binary){
         binarize_w2sign(l.weights, l.n, l.c*l.size*l.size, l.signWb, l.scale_alpha);
 //        binarize_weights(l.weights, l.n, l.c*l.size*l.size, l.binary_weights);
@@ -510,11 +537,11 @@ void forward_convolutional_layer_cpu(convolutional_layer l, network net)
     float *b = net.workspace;
     float *c = l.output;
 
-    if(pre_norm && l.batch_normalize){
+    if(pre_norm>=1 && !l.done_norm && l.batch_normalize){
         int spatial = l.size*l.size*l.c;
         int filters = l.out_c;
         int batch   = l.batch;
-        float *x        = l.weights;
+        float *w        = l.weights;
         float *variance = l.rolling_variance;
         float *scale    = l.scales;
         int b, f, i;
@@ -522,7 +549,7 @@ void forward_convolutional_layer_cpu(convolutional_layer l, network net)
             for(f = 0; f < filters; ++f){
                 for(i = 0; i < spatial; ++i){ 
                     int index = b*filters*spatial + f*spatial + i;
-                    x[index] *= scale[f]/(sqrt(variance[f]) + .000001f);   //removed
+                    w[index] *= scale[f]/(sqrt(variance[f]) + .000001f);   //removed
                 }
             }
         }
@@ -540,7 +567,7 @@ void forward_convolutional_layer_cpu(convolutional_layer l, network net)
     }
 
     if(l.batch_normalize){
-        if(pre_norm){   //normalize and shift and scale
+        if(pre_norm==1 && !l.done_norm){   //normalize and shift and scale, if 2 then normalize in parser.c
             int size = l.out_h*l.out_w;
             int n    = l.out_c;
             int batch = l.batch;
@@ -610,6 +637,7 @@ void forward_convolutional_layer_cpu(convolutional_layer l, network net)
                 }
             }
         }
+        l.done_norm = 1;
     } else {
         add_bias(l.output, l.biases, l.batch, l.n, out_h*out_w);
     }
