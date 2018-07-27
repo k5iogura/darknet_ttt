@@ -261,6 +261,9 @@ convolutional_layer make_convolutional_layer(int batch, int h, int w, int c, int
         l.binary_input = calloc(l.inputs*l.batch, sizeof(float));
     }
 
+    l.done_norm = calloc(1,sizeof(unsigned int));   //add
+    *l.done_norm = 0;                               //add
+
     if(batch_normalize){
         l.scales = calloc(n, sizeof(float));
         l.scale_updates = calloc(n, sizeof(float));
@@ -278,8 +281,6 @@ convolutional_layer make_convolutional_layer(int batch, int h, int w, int c, int
         l.rolling_variance = calloc(n, sizeof(float));
         l.x = calloc(l.batch*l.outputs, sizeof(float));
         l.x_norm = calloc(l.batch*l.outputs, sizeof(float));
-        l.done_norm = calloc(1,sizeof(unsigned int));
-        *l.done_norm = 0;
     }
     if(adam){
         l.m = calloc(c*n*size*size, sizeof(float));
@@ -482,9 +483,9 @@ void forward_convolutional_layer_cpu(convolutional_layer l, network net)
     int out_h = l.out_h;
     int out_w = l.out_w;
     int i;
-    const int pre_norm=1;
+    //const int pre_norm=1;   //OK
     //const int pre_norm=2; //None
-    //const int pre_norm=0;   //OK
+    const int pre_norm=0;   //OK
 
     fill_cpu(l.outputs*l.batch, 0, l.output, 1);
     if(l.binary){
@@ -530,7 +531,6 @@ void forward_convolutional_layer_cpu(convolutional_layer l, network net)
                 }
             }
         }
-printf("step1 %d\n",*l.done_norm);
     }
     for(i = 0; i < l.batch; ++i){
         im2col_cpu(net.input, l.c, l.h, l.w, 
@@ -545,7 +545,7 @@ printf("step1 %d\n",*l.done_norm);
     }
 
     if(l.batch_normalize){
-        if(pre_norm==1 && !*l.done_norm){   //normalize and shift and scale, if 2 then normalize in parser.c
+        if(pre_norm==1){   //normalize and shift and scale, if 2 then normalize in parser.c
             int size = l.out_h*l.out_w;
             int n    = l.out_c;
             int batch = l.batch;
@@ -563,7 +563,6 @@ printf("step1 %d\n",*l.done_norm);
                     }
                 }
             }
-printf("step2 %d\n",*l.done_norm);
         }
         ////forward_batchnorm_layer(l, net);
         //normalize_cpu(l.output, l.rolling_mean, l.rolling_variance, l.batch, l.out_c, l.out_h*l.out_w);
@@ -617,7 +616,6 @@ printf("step2 %d\n",*l.done_norm);
             }
         }
         *l.done_norm = 1;
-printf("step3 %d\n",*l.done_norm);
     } else {
         add_bias(l.output, l.biases, l.batch, l.n, out_h*out_w);
     }
