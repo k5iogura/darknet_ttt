@@ -137,7 +137,27 @@ void gemm_nn_hf(int M, int N, int K, float ALPHA,
     printf("A/B/C max/min = %f %f / %f %f / %f %f\n",maxA,minA,maxx,minn,maxC,minC);
 }
 
+//void gemm_nn_BcolM(int M, int N, int K, float ALPHA, 
 void gemm_nn(int M, int N, int K, float ALPHA, 
+        float *A, int lda, 
+        float *B, int ldb,
+        float *C, int ldc)
+{
+    int i,j,k;
+    #pragma omp parallel for
+    for(i = 0; i < M; ++i){
+        for(j = 0; j < N; ++j){
+            register float Cn = C[i*ldc+j];
+            for(k = 0; k < K; ++k){
+                Cn += A[i*lda+k] * B[j*lda+k];
+            }
+            C[i*ldc+j] = Cn;
+        }
+    }
+}
+
+//void gemm_nn(int M, int N, int K, float ALPHA, 
+void gemm_nn_naive(int M, int N, int K, float ALPHA, 
         float *A, int lda, 
         float *B, int ldb,
         float *C, int ldc)

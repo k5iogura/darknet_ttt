@@ -559,7 +559,9 @@ void forward_convolutional_layer_cpu(convolutional_layer l, network net)
         }
     }
     for(i = 0; i < l.batch; ++i){
-        im2col_cpu(net.input, l.c, l.h, l.w, 
+        //im2col_cpu(net.input, l.c, l.h, l.w, 
+        //       l.size, l.stride, l.pad, b);
+        im2col_cpu2(net.input, l.c, l.h, l.w, 
                 l.size, l.stride, l.pad, b);
         if(l.binary)
             gemm_nn_sign(m,n,k,l.scale_alpha,l.signWb,k,b,n,c,n);
