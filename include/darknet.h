@@ -218,6 +218,7 @@ struct layer{
     float * scale_beta;       //add
     unsigned int * signWb;    //add
     unsigned int * signIb;    //add
+    unsigned int * done_norm; //add
 
     float * biases;
     float * bias_updates;
