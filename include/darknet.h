@@ -219,6 +219,7 @@ struct layer{
     unsigned int * signWb;    //add
     unsigned int * signIb;    //add
     unsigned int * done_norm; //add
+    float * biased_output;
 
     float * biases;
     float * bias_updates;
