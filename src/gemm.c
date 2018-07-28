@@ -73,10 +73,13 @@ void gemm(int TA, int TB, int M, int N, int K, float ALPHA,
     gemm_cpu( TA,  TB,  M, N, K, ALPHA,A,lda, B, ldb,BETA,C,ldc);
 }
 
-#define FRACT 14
+//#define gemm_nn gemm_nn_BcolM   // need using im2col_cpu2
+//#define gemm_nn gemm_nn_naive
+#define gemm_nn gemm_nn_fp
+//#define gemm_nn gemm_nn_hf
+#define FRACT 20
 #define FIXFP int
 #define FIXFPx2 long
-//void gemm_nn(int M, int N, int K, float ALPHA, 
 void gemm_nn_fp(int M, int N, int K, float ALPHA, 
         float *A, int lda, 
         float *B, int ldb,
@@ -108,7 +111,6 @@ void gemm_nn_fp(int M, int N, int K, float ALPHA,
     printf("A/B/C max/min = %f %f / %f %f / %f %f\n",maxA,minA,maxx,minn,maxC,minC);
 }
 
-//void gemm_nn(int M, int N, int K, float ALPHA, 
 void gemm_nn_hf(int M, int N, int K, float ALPHA, 
         float *A, int lda, 
         float *B, int ldb,
@@ -137,8 +139,7 @@ void gemm_nn_hf(int M, int N, int K, float ALPHA,
     printf("A/B/C max/min = %f %f / %f %f / %f %f\n",maxA,minA,maxx,minn,maxC,minC);
 }
 
-//void gemm_nn_BcolM(int M, int N, int K, float ALPHA, 
-void gemm_nn(int M, int N, int K, float ALPHA, 
+void gemm_nn_BcolM(int M, int N, int K, float ALPHA, 
         float *A, int lda, 
         float *B, int ldb,
         float *C, int ldc)
@@ -156,7 +157,6 @@ void gemm_nn(int M, int N, int K, float ALPHA,
     }
 }
 
-//void gemm_nn(int M, int N, int K, float ALPHA, 
 void gemm_nn_naive(int M, int N, int K, float ALPHA, 
         float *A, int lda, 
         float *B, int ldb,
