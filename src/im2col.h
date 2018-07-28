@@ -5,7 +5,7 @@ void im2col_cpu(float* data_im,
         int channels, int height, int width,
         int ksize, int stride, int pad, float* data_col);
 
-void im2col_cpu2(float* data_im,
+void im2col_cpu_col_major(float* data_im,
         int channels, int height, int width,
         int ksize, int stride, int pad, float* data_col);
 

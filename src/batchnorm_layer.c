@@ -148,57 +148,10 @@ void forward_batchnorm_layer(layer l, network net)
         normalize_cpu(l.output, l.mean, l.variance, l.batch, l.out_c, l.out_h*l.out_w);   
         copy_cpu(l.outputs*l.batch, l.output, 1, l.x_norm, 1);
     } else {
-        //normalize_cpu(l.output, l.rolling_mean, l.rolling_variance, l.batch, l.out_c, l.out_h*l.out_w);
-        {
-            int spatial = l.out_h*l.out_w;
-            int filters = l.out_c;
-            int batch   = l.batch;
-            float *x        = l.output;
-            float *mean     = l.rolling_mean;
-            float *variance = l.rolling_variance;
-            int b, f, i;
-            for(b = 0; b < batch; ++b){
-                for(f = 0; f < filters; ++f){
-                    for(i = 0; i < spatial; ++i){ 
-                        int index = b*filters*spatial + f*spatial + i;
-                        x[index] = (x[index] - mean[f])/(sqrt(variance[f]) + .000001f);   //removed
-                    }
-                }
-            }
-        }
+        normalize_cpu(l.output, l.rolling_mean, l.rolling_variance, l.batch, l.out_c, l.out_h*l.out_w);
     }
-    //scale_bias(l.output, l.scales, l.batch, l.out_c, l.out_h*l.out_w);
-    {
-        int size = l.out_h*l.out_w;
-        int n    = l.out_c;
-        int batch = l.batch;
-        float *output = l.output;
-        float *scales = l.scales;
-        int i,j,b;
-        for(b = 0; b < batch; ++b){
-            for(i = 0; i < n; ++i){
-                for(j = 0; j < size; ++j){
-                    output[(b*n + i)*size + j] *= scales[i];
-                }
-            }
-        }
-    }
-    //add_bias(l.output, l.biases, l.batch, l.out_c, l.out_h*l.out_w);
-    {
-        int size = l.out_h*l.out_w;
-        int n    = l.out_c;
-        int batch = l.batch;
-        float *output = l.output;
-        float *biases = l.biases;
-        int i,j,b;
-        for(b = 0; b < batch; ++b){
-            for(i = 0; i < n; ++i){
-                for(j = 0; j < size; ++j){
-                    output[(b*n + i)*size + j] += biases[i];
-                }
-            }
-        }
-    }
+    scale_bias(l.output, l.scales, l.batch, l.out_c, l.out_h*l.out_w);
+    add_bias(l.output, l.biases, l.batch, l.out_c, l.out_h*l.out_w);
 }
 
 void backward_batchnorm_layer(layer l, network net)

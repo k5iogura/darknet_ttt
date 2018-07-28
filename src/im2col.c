@@ -38,8 +38,6 @@ void im2col_cpu(float* data_im,
     }
 }
 
-//From Berkeley Vision's Caffe!
-//https://github.com/BVLC/caffe/blob/master/LICENSE
 void im2col_cpu2(float* data_im,
      int channels,  int height,  int width,
      int ksize,  int stride, int pad, float* data_col) 
