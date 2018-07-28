@@ -1,5 +1,5 @@
 #export PKG_CONFIG_PATH=/home/kenji/libs2/opencv-2.4.13-x86_linux_gcc/installed/lib/pkgconfig:/home/kenji/libs/SDL2_x86/lib/pkgconfig:/home/kenji/libs/ffmpeg_x86+x264/lib/pkgconfig
-export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
+export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:/opt/OpenBLAS/lib/pkgconfig
 GPU=0
 CUDNN=0
 OPENCV?=1
@@ -7,7 +7,7 @@ DEBUG?=0
 FPGA?=0
 FPGA_EMU?=0
 FP32=0
-BLAS=0
+BLAS=1
 
 ARCH= \
       -gencode arch=compute_30,code=sm_30 \

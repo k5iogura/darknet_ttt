@@ -7,6 +7,10 @@
 #include <math.h>
 #include "fp16.h"
 
+#ifdef CBLAS
+#include <cblas.h>
+#endif
+
 void gemm_bin(int M, int N, int K, float ALPHA, 
         char  *A, int lda, 
         float *B, int ldb,
@@ -75,8 +79,9 @@ void gemm(int TA, int TB, int M, int N, int K, float ALPHA,
 
 //#define gemm_nn gemm_nn_BcolM   // need using im2col_cpu2
 //#define gemm_nn gemm_nn_naive
-#define gemm_nn gemm_nn_fp
+//#define gemm_nn gemm_nn_fp
 //#define gemm_nn gemm_nn_hf
+#define gemm_nn gemm_nn_cblas
 #define FRACT 20
 #define FIXFP int
 #define FIXFPx2 long
@@ -155,6 +160,14 @@ void gemm_nn_BcolM(int M, int N, int K, float ALPHA,
             C[i*ldc+j] = Cn;
         }
     }
+}
+
+void gemm_nn_cblas(int M, int N, int K, float ALPHA, 
+        float *A, int lda, 
+        float *B, int ldb,
+        float *C, int ldc)
+{
+    cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, M, N, K, ALPHA, A, lda, B, ldb, 1, C, ldc);
 }
 
 void gemm_nn_naive(int M, int N, int K, float ALPHA, 
