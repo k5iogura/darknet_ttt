@@ -107,8 +107,11 @@ OBJS = $(addprefix $(OBJDIR), $(OBJ))
 DEPS = $(wildcard src/*.h) Makefile include/darknet.h
 
 #all: obj backup results $(SLIB) $(ALIB) $(EXEC)
-all: obj  results $(SLIB) $(ALIB) $(EXEC)
+all: obj  results $(SLIB) $(ALIB) $(EXEC) tags
 
+
+tags:$(DEPS) $(wildcard src/*.c*)
+	ctags $(wildcard src/*.h) $(wildcard src/*.c*)
 
 $(EXEC): $(EXECOBJ) $(ALIB)
 	$(CC) $(COMMON) $(CFLAGS) $^ -o $@ $(LDFLAGS) $(ALIB) -lstdc++

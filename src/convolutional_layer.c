@@ -542,10 +542,11 @@ void forward_convolutional_layer_cpu(convolutional_layer l, network net)
     int out_h = l.out_h;
     int out_w = l.out_w;
     int i;
-    //const int pre_norm=0; //post-normalize-weights post-scale-biase post-add-biase  //OK
-    //const int pre_norm=1; //pre-normalize-weights  post-biases //OK
-    //const int pre_norm=2; //pre-biase pre-normalize-weights //OK
-      const int pre_norm=2;
+    //int pre_norm=0; //post-normalize-weights post-scale-biase post-add-biase for Training
+    //int pre_norm=1; //pre-normalize-weights  post-biases for Only Prediction
+    //int pre_norm=2; //pre-biase pre-normalize-weight     for Only Prediction
+    int pre_norm=0;
+    if(net.train) pre_norm=0;
 
     if((pre_norm<=1)||(pre_norm==2 && !*l.done_norm))
         fill_cpu(l.outputs*l.batch, 0, l.output, 1);
