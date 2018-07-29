@@ -81,8 +81,8 @@ void gemm(int TA, int TB, int M, int N, int K, float ALPHA,
 //#define gemm_nn gemm_nn_naive
 //#define gemm_nn gemm_nn_fp
 //#define gemm_nn gemm_nn_hf
-//#define gemm_nn gemm_nn_cblas
-#define gemm_nn gemm_nn_hetero
+#define gemm_nn gemm_nn_cblas
+//#define gemm_nn gemm_nn_hetero
 #define FRACT 20
 #define FIXFP int
 #define FIXFPx2 long
