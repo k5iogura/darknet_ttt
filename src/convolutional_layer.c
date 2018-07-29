@@ -544,9 +544,9 @@ void forward_convolutional_layer_cpu(convolutional_layer l, network net)
     int i;
     //int pre_norm=0; //post-normalize-weights post-scale-biase post-add-biase for Training
     //int pre_norm=1; //pre-normalize-weights  post-biases for Only Prediction
-    //int pre_norm=2; //pre-biase pre-normalize-weight     for Only Prediction
+    //int pre_norm=2; //pre-normalize-weights  pre-biases  for Only Prediction
     //int pre_norm=3; //normalization at load_weights      for Only Prediction
-    int pre_norm=0;
+    int pre_norm=2;
 #ifdef FOLDBN
     pre_norm=3;
 #endif
