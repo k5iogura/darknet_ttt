@@ -631,10 +631,10 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
 
     image **alphabet = load_alphabet();
     network net = parse_network_cfg(cfgfile);
+    set_batch_network(&net, 1);
     if(weightfile){
         load_weights(&net, weightfile);
     }
-    set_batch_network(&net, 1);
     srand(2222222);
     double time;
     char buff[256];

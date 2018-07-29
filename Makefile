@@ -6,6 +6,7 @@ OPENCV?=1
 DEBUG?=0
 FPGA?=0
 FPGA_EMU?=0
+FOLDBN=1
 FP32=0
 BLAS=1
 
@@ -37,6 +38,10 @@ CFLAGS=-Wall -Wno-unknown-pragmas -Wfatal-errors -fPIC
 ifeq ($(BLAS),1)
 CFLAGS+= -DCBLAS $(shell pkg-config --cflags openblas)
 LDFLAGS+=$(shell pkg-config --libs openblas)
+endif
+
+ifeq ($(FOLDBN),1)
+CFLAGS+= -DFOLDBN
 endif
 
 AOCX=gemm1.aocx
