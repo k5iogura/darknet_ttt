@@ -52,13 +52,13 @@ OBJ+=gemm_fpga.o
 CFLAGS+= $(shell aocl compile-config)
 LDFLAGS+= $(shell aocl link-config)
 else
-ifeq (%(FPGA),1)
+ifeq ($(FPGA),1)
 FPGA_DEVICE=
 CFLAGS+= -DFPGA
-endif
 OBJ+=gemm_fpga.o
 CFLAGS+= $(shell aocl compile-config)
 LDFLAGS+= $(shell aocl link-config)
+endif
 endif
 
 ifeq ($(FP32),1)
