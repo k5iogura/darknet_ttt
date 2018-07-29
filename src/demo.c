@@ -140,10 +140,10 @@ void demo(char *cfgfile, char *weightfile, float thresh, int cam_index, const ch
     demo_hier = hier;
     printf("Demo\n");
     net = parse_network_cfg(cfgfile);
+    set_batch_network(&net, 1);
     if(weightfile){
         load_weights(&net, weightfile);
     }
-    set_batch_network(&net, 1);
     pthread_t detect_thread;
     pthread_t fetch_thread;
 
