@@ -111,7 +111,7 @@ all: obj  results $(SLIB) $(ALIB) $(EXEC) tags
 
 
 tags:$(DEPS) $(wildcard src/*.c*)
-	ctags $(wildcard src/*.h) $(wildcard src/*.c*)
+	ctags $(wildcard src/* examples/* include/*)
 
 $(EXEC): $(EXECOBJ) $(ALIB)
 	$(CC) $(COMMON) $(CFLAGS) $^ -o $@ $(LDFLAGS) $(ALIB) -lstdc++

@@ -81,7 +81,8 @@ void gemm(int TA, int TB, int M, int N, int K, float ALPHA,
 //#define gemm_nn gemm_nn_naive
 //#define gemm_nn gemm_nn_fp
 //#define gemm_nn gemm_nn_hf
-#define gemm_nn gemm_nn_cblas
+//#define gemm_nn gemm_nn_cblas
+#define gemm_nn gemm_nn_hetero
 #define FRACT 20
 #define FIXFP int
 #define FIXFPx2 long
@@ -162,12 +163,41 @@ void gemm_nn_BcolM(int M, int N, int K, float ALPHA,
     }
 }
 
+typedef struct gemm_args{
+    int M,N,K;
+    float *A, *B, *C;
+    int lda,ldb,ldc;
+    float ALPHA;
+} gemm_args;
+
 void gemm_nn_cblas(int M, int N, int K, float ALPHA, 
         float *A, int lda, 
         float *B, int ldb,
         float *C, int ldc)
 {
     cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, M, N, K, ALPHA, A, lda, B, ldb, 1, C, ldc);
+}
+
+void *gemm_nn_thrd(void *g_args){
+    gemm_args g = *(gemm_args *)g_args;
+    cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+        g.M, g.N, g.K, g.ALPHA , g.A, g.lda, g.B, g.ldb, 1, g.C, g.ldc);
+    return 0;
+}
+void gemm_nn_hetero(int M, int N, int K, float ALPHA, 
+        float *A, int lda, 
+        float *B, int ldb,
+        float *C, int ldc)
+{
+    gemm_args *g_ptr = (gemm_args*)malloc(sizeof(gemm_args));
+    g_ptr->M   =   M; g_ptr->N   =   N; g_ptr->K   =   K;
+    g_ptr->lda = lda; g_ptr->ldb = ldb; g_ptr->ldc = ldc;
+    g_ptr->A   =   A; g_ptr->B   =   B; g_ptr->C   =   C;
+    g_ptr->ALPHA = ALPHA;
+    pthread_t g_thrd;
+    if(pthread_create(&g_thrd, 0, gemm_nn_thrd, g_ptr)) error("Thread creation failed hetero");
+    pthread_join(g_thrd, 0);
+    free(g_ptr);
 }
 
 void gemm_nn_naive(int M, int N, int K, float ALPHA, 
