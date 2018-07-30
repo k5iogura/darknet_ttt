@@ -117,6 +117,7 @@ void gemm_nn_fp(int M, int N, int K, float ALPHA,
     printf("A/B/C max/min = %f %f / %f %f / %f %f\n",maxA,minA,maxx,minn,maxC,minC);
 }
 
+#ifndef FPGA
 void gemm_nn_hf(int M, int N, int K, float ALPHA, 
         float *A, int lda, 
         float *B, int ldb,
@@ -131,19 +132,20 @@ void gemm_nn_hf(int M, int N, int K, float ALPHA,
         for(k = 0; k < K; ++k){
             register float A_PART = ALPHA*A[i*lda+k];
             fp16 hfA_PART = f2h(A_PART);
-            maxA=(maxA>A[i*lda+k])?maxA:A[i*lda+k];
-            minA=(minA<A[i*lda+k])?minA:A[i*lda+k];
+     //       maxA=(maxA>A[i*lda+k])?maxA:A[i*lda+k];
+     //       minA=(minA<A[i*lda+k])?minA:A[i*lda+k];
             for(j = 0; j < N; ++j){
-                maxx=(maxx>B[k*ldb+j])?maxx:B[k*ldb+j];
-                minn=(minn<B[k*ldb+j])?minn:B[k*ldb+j];
+     //           maxx=(maxx>B[k*ldb+j])?maxx:B[k*ldb+j];
+     //           minn=(minn<B[k*ldb+j])?minn:B[k*ldb+j];
                 fp16 hfB = f2h(B[k*ldb+j]);
                 C[i*ldc+j] += h2f(fp16_prod(hfA_PART , hfB));
             }
         }
-        for(j = 0; j < N; ++j){maxC=(maxC>C[i*ldc+j])?maxC:C[i*ldc+j]; minC=(minC<C[i*ldc+j])?minC:C[i*ldc+j];}
+     //   for(j = 0; j < N; ++j){maxC=(maxC>C[i*ldc+j])?maxC:C[i*ldc+j]; minC=(minC<C[i*ldc+j])?minC:C[i*ldc+j];}
     }
-    printf("A/B/C max/min = %f %f / %f %f / %f %f\n",maxA,minA,maxx,minn,maxC,minC);
+    //printf("A/B/C max/min = %f %f / %f %f / %f %f\n",maxA,minA,maxx,minn,maxC,minC);
 }
+#endif
 
 void gemm_nn_BcolM(int M, int N, int K, float ALPHA, 
         float *A, int lda, 
