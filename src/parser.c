@@ -1084,12 +1084,14 @@ void load_convolutional_weights(layer l, FILE *fp)
         }
     }
     fread(l.weights, sizeof(float), num, fp);
+#ifdef FOLDBN
     if (l.batch_normalize && (!l.dontloadscales)){  //add
         fill_cpu(l.outputs*l.batch, 0, l.output, 1);
         scale_add_bias(l, l.biased_output);
         copy_cpu(l.outputs*l.batch, l.biased_output, 1, l.output, 1);
         normalize_weights(l, l.weights);
     }
+#endif
     //if(l.c == 3) scal_cpu(num, 1./256, l.weights, 1);
     if (l.flipped) {
         transpose_matrix(l.weights, l.c*l.size*l.size, l.n);
