@@ -203,7 +203,13 @@ network make_network(int n)
 void forward_network(network net)
 {
     int i;
+#ifdef GET_LAYER_TIME
+    double time, total=0;
+#endif
     for(i = 0; i < net.n; ++i){
+#ifdef GET_LAYER_TIME
+        time=what_time_is_it_now();
+#endif
         net.index = i;
         layer l = net.layers[i];
         if(l.delta){
@@ -214,6 +220,13 @@ void forward_network(network net)
         if(l.truth) {
             net.truth = l.output;
         }
+#ifdef GET_LAYER_TIME
+        total+=what_time_is_it_now()-time;
+        if(l.type==CONVOLUTIONAL)
+            printf("layer-CONV %f/%f sec.\n", i, what_time_is_it_now()-time,total);
+        else
+            printf("layer-%4d %f/%f sec.\n", i, what_time_is_it_now()-time,total);
+#endif
     }
     calc_network_cost(net);
 }
