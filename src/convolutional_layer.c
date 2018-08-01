@@ -8,6 +8,8 @@
 #include <stdio.h>
 #include <time.h>
 
+#include <cblas.h>
+
 #ifdef AI2
 #include "xnor_layer.h"
 #endif
@@ -243,8 +245,9 @@ convolutional_layer make_convolutional_layer(int batch, int h, int w, int c, int
     l.biased_output = calloc(l.batch*l.outputs, sizeof(float));    //add
     l.delta  = calloc(l.batch*l.outputs, sizeof(float));
 
-    //l.forward = forward_convolutional_layer;  //remove
-    l.forward = forward_convolutional_layer_cpu;
+    //l.forward = forward_convolutional_layer;  //remove original
+    //l.forward = forward_convolutional_layer_cpu; //remove for test version
+    l.forward = forward_convolutional_layer_foldBN;    //add for fold batch normalize
     l.backward = backward_convolutional_layer;
     l.update = update_convolutional_layer;
     if(binary){
@@ -537,6 +540,35 @@ void normalize_weights(layer l, float *weights){
     }
 }
 
+void forward_convolutional_layer_foldBN(convolutional_layer l, network net)
+{
+    int out_h = l.out_h;
+    int out_w = l.out_w;
+    double time=what_time_is_it_now();
+
+    copy_cpu(l.outputs*l.batch, l.biased_output, 1, l.output, 1);
+
+    int m = l.n;
+    int k = l.size*l.size*l.c;
+    int n = out_h*out_w;
+
+
+    float *a = l.weights;
+    float *b = net.workspace;
+    float *c = l.output;
+
+    im2col_cpu(net.input, l.c, l.h, l.w, 
+           l.size, l.stride, l.pad, b);
+    printf(" WOG=%f ", what_time_is_it_now()-time);
+    cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, m, n, k, 1, a, k, b, n, 1, c, n);
+
+    if(!l.batch_normalize){
+        add_bias(l.output, l.biases, l.batch, l.n, out_h*out_w);
+    }
+
+    activate_array(l.output, m*n*l.batch, l.activation);
+}
+
 void forward_convolutional_layer_cpu(convolutional_layer l, network net)
 {
     int out_h = l.out_h;
@@ -547,6 +579,7 @@ void forward_convolutional_layer_cpu(convolutional_layer l, network net)
     //int pre_norm=2; //pre-normalize-weights  pre-biases  for Only Prediction
     //int pre_norm=3; //normalization at load_weights      for Only Prediction
     int pre_norm=2;
+    double time=what_time_is_it_now();
 #ifdef FOLDBN
     pre_norm=3;
     copy_cpu(l.outputs*l.batch, l.biased_output, 1, l.output, 1);
@@ -597,6 +630,7 @@ void forward_convolutional_layer_cpu(convolutional_layer l, network net)
                l.size, l.stride, l.pad, b);
         //im2col_cpu_col_major(net.input, l.c, l.h, l.w, 
         //        l.size, l.stride, l.pad, b);
+        printf(" WOG=%f ", what_time_is_it_now()-time);
         if(l.binary)
             gemm_nn_sign(m,n,k,l.scale_alpha,l.signWb,k,b,n,c,n);
             //gemm_nn_binary(m,n,k,a,k,b,n,c,n);
