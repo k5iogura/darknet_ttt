@@ -9,6 +9,8 @@
 #include <time.h>
 
 #include <cblas.h>
+#include "im2row.h"
+#include "common_types.h"
 
 #ifdef AI2
 #include "xnor_layer.h"
@@ -553,6 +555,7 @@ void forward_convolutional_layer_foldBN(convolutional_layer l, network net)
     int n = out_h*out_w;
 
 
+if(1){
     float *a = l.weights;
     float *b = net.workspace;
     float *c = l.output;
@@ -561,6 +564,17 @@ void forward_convolutional_layer_foldBN(convolutional_layer l, network net)
            l.size, l.stride, l.pad, b);
     printf(" WOG=%f ", what_time_is_it_now()-time);
     cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, m, n, k, 1, a, k, b, n, 1, c, n);
+}else{
+    float *a = net.workspace;
+    float *b = l.weights;
+    float *c = l.output;
+    TensorDim in_dim  ={ 1, l.c, l.h, l.w };
+    TensorDim filt_dim={ l.out_c, l.c, l.size, l.size };
+    CppConvnetIm2Row(a, net.input, out_w, out_h, k, in_dim, filt_dim, l.stride, l.pad);
+    printf(" WOG=%f ", what_time_is_it_now()-time);
+    //cblas_sgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, m, n, k, 1, a, k, b, n, 1, c, n);
+      cblas_sgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, n, m, k, 1, a, n, b, k, 1, c, n);
+}
 
     if(!l.batch_normalize){
         add_bias(l.output, l.biases, l.batch, l.n, out_h*out_w);
