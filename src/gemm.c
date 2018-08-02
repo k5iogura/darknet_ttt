@@ -325,7 +325,8 @@ void gemm_tt(int M, int N, int K, float ALPHA,
             for(k = 0; k < K; ++k){
                 sum += ALPHA*A[i+k*lda]*B[k+j*ldb];
             }
-            C[i*ldc+j] += sum;
+            //C[i*ldc+j] += sum;    // BUG terrible!:-)
+            C[i+ldc*j] += sum;
         }
     }
 }
