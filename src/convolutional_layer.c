@@ -249,7 +249,8 @@ convolutional_layer make_convolutional_layer(int batch, int h, int w, int c, int
 
     //l.forward = forward_convolutional_layer;  //remove original
     //l.forward = forward_convolutional_layer_cpu; //remove for test version
-    l.forward = forward_convolutional_layer_foldBN;    //add for fold batch normalize
+    //l.forward = forward_convolutional_layer_foldBN;    //add for fold batch normalize
+    l.forward = forward_convolutional_layer_kn2row;    //add for fold batch normalize
     l.backward = backward_convolutional_layer;
     l.update = update_convolutional_layer;
     if(binary){

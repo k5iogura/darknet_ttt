@@ -84,8 +84,8 @@ void forward_convolutional_layer_kn2row(convolutional_layer l, network net){
   // Currently we have limited support.
   float *in_data = net.input;
   float *filters = l.weights;
-  TensorDim in_dim   = { 1, l.n, l.w, l.h };
-  TensorDim filt_dim = { l.out_c, l.n, l.size, l.size };
+  TensorDim in_dim   = { 1, l.c, l.w, l.h };
+  TensorDim filt_dim = { l.out_c, l.c, l.size, l.size };
   int stride = l.stride;
   int pad    = l.pad;
   int group  = 1;
