@@ -76,11 +76,11 @@ void MatrixShiftAdd(float *base_mat,
  *
  * Output will be in NCHW format.
  */
-void forward_convolutional_layer_kn2row(convolutional_layer l, network net){
+static void convolutional_layer_kn2row(convolutional_layer l, network net)
 /*bool Kn2RowConvLayer(const float *in_data, const float *filters,
                          const float *bias, TensorDim in_dim,
                          TensorDim filt_dim, int stride, int pad, int group,
-                         float *output) {*/
+                         float *output)*/ {
   // Currently we have limited support.
   float *in_data = net.input;
   float *filters = l.weights;
@@ -134,8 +134,8 @@ void forward_convolutional_layer_kn2row(convolutional_layer l, network net){
       }
     }
   } else {*/
-    memset(output, 0, out_dim.n * out_dim.c * out_dim.h * out_dim.w *
-           sizeof(float));
+//    memset(output, 0, out_dim.n * out_dim.c * out_dim.h * out_dim.w *
+//           sizeof(float));
 //  }
 
   int kr, kc, omap;
@@ -170,3 +170,16 @@ void forward_convolutional_layer_kn2row(convolutional_layer l, network net){
   free(gemm_output);
 //  return true;
 }
+
+void forward_convolutional_layer_kn2row(convolutional_layer l, network net){
+    int out_h = l.out_h;
+    int out_w = l.out_w;
+//    double time=what_time_is_it_now();
+
+    copy_cpu(l.outputs*l.batch, l.biased_output, 1, l.output, 1);
+    convolutional_layer_kn2row(l,net);
+    if(!l.batch_normalize){
+        add_bias(l.output, l.biases, l.batch, l.n, out_h*out_w);
+    }
+}
+

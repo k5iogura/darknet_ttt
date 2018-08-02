@@ -249,8 +249,8 @@ convolutional_layer make_convolutional_layer(int batch, int h, int w, int c, int
 
     //l.forward = forward_convolutional_layer;  //remove original
     //l.forward = forward_convolutional_layer_cpu; //remove for test version
-    //l.forward = forward_convolutional_layer_foldBN;    //add for fold batch normalize
-    l.forward = forward_convolutional_layer_kn2row;    //add for fold batch normalize
+    l.forward = forward_convolutional_layer_foldBN;    //add for fold batch normalize
+    //l.forward = forward_convolutional_layer_kn2row;    //add for fold batch normalize
     l.backward = backward_convolutional_layer;
     l.update = update_convolutional_layer;
     if(binary){
@@ -451,6 +451,22 @@ void resize_convolutional_layer(convolutional_layer *l, int w, int h)
     l->workspace_size = get_workspace_size(*l);
 }
 
+// add_bias BLAS version
+// But Precision btn add_bias() and add_bias_cblas() is difference, be carefull!
+//
+void add_bias_cblas(float *output, float *biases, int batch, int n, int size)   //add
+{
+    int i,j,b;
+    for(b = 0; b < batch; ++b){
+        for(i = 0; i < n; ++i){
+            //for(j = 0; j < size; ++j){
+            //    output[(b*n + i)*size + j] += biases[i];
+            //}
+            cblas_saxpy(size, 1, biases+i, 1, output+(b*n+i)*size, 1);
+        }
+    }
+}
+
 void add_bias(float *output, float *biases, int batch, int n, int size)
 {
     int i,j,b;
@@ -549,36 +565,38 @@ void forward_convolutional_layer_foldBN(convolutional_layer l, network net)
     int out_w = l.out_w;
     double time=what_time_is_it_now();
 
-    copy_cpu(l.outputs*l.batch, l.biased_output, 1, l.output, 1);
+    //copy_cpu(l.outputs*l.batch, l.biased_output, 1, l.output, 1);
+    cblas_scopy(l.outputs*l.batch, l.biased_output, 1, l.output, 1);
 
     int m = l.n;
     int k = l.size*l.size*l.c;
     int n = out_h*out_w;
 
 
-if(1){
-    float *a = l.weights;
-    float *b = net.workspace;
-    float *c = l.output;
+    if(0){
+        float *a = l.weights;
+        float *b = net.workspace;
+        float *c = l.output;
 
-    im2col_cpu(net.input, l.c, l.h, l.w, 
-           l.size, l.stride, l.pad, b);
-    printf(" WOG=%f ", what_time_is_it_now()-time);
-    cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, m, n, k, 1, a, k, b, n, 1, c, n);
-}else{
-    float *a = net.workspace;
-    float *b = l.weights;
-    float *c = l.output;
-    TensorDim in_dim  ={ 1, l.c, l.h, l.w };
-    TensorDim filt_dim={ l.out_c, l.c, l.size, l.size };
-    CppConvnetIm2Row(a, net.input, out_w, out_h, k, in_dim, filt_dim, l.stride, l.pad);
-    printf(" WOG=%f ", what_time_is_it_now()-time);
-    //cblas_sgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, m, n, k, 1, a, k, b, n, 1, c, n);
-      cblas_sgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, n, m, k, 1, a, n, b, k, 1, c, n);
-}
+        im2col_cpu(net.input, l.c, l.h, l.w, 
+               l.size, l.stride, l.pad, b);
+        printf(" WOG=%f ", what_time_is_it_now()-time);
+        cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, m, n, k, 1, a, k, b, n, 1, c, n);
+    }else{
+        float *a = net.workspace;
+        float *b = l.weights;
+        float *c = l.output;
+        TensorDim in_dim  ={ 1, l.c, l.h, l.w };
+        TensorDim filt_dim={ l.out_c, l.c, l.size, l.size };
+        CppConvnetIm2Row(a, net.input, out_w, out_h, k, in_dim, filt_dim, l.stride, l.pad);
+        printf(" WOG=%f ", what_time_is_it_now()-time);
+        //cblas_sgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, m, n, k, 1, a, k, b, n, 1, c, n);
+          cblas_sgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, n, m, k, 1, a, n, b, k, 1, c, n);
+    }
 
     if(!l.batch_normalize){
-        add_bias(l.output, l.biases, l.batch, l.n, out_h*out_w);
+        //add_bias(l.output, l.biases, l.batch, l.n, out_h*out_w);
+        add_bias_cblas(l.output, l.biases, l.batch, l.n, out_h*out_w);
     }
 
     activate_array(l.output, m*n*l.batch, l.activation);
