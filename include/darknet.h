@@ -20,7 +20,9 @@ extern int gpu_index;
     #endif
 #endif
 
-#ifndef __cplusplus
+#ifdef __cplusplus
+extern "C" {
+#endif
     #ifdef OPENCV
     #include "opencv2/highgui/highgui_c.h"
     #include "opencv2/imgproc/imgproc_c.h"
@@ -30,7 +32,6 @@ extern int gpu_index;
     #include "opencv2/imgcodecs/imgcodecs_c.h"
     #endif
     #endif
-#endif
 
 typedef struct{
     int classes;
@@ -724,9 +725,15 @@ void do_nms_obj(box *boxes, float **probs, int total, int classes, float thresh)
 matrix make_matrix(int rows, int cols);
 
 #ifndef __cplusplus
-#ifdef OPENCV
-image get_image_from_stream(CvCapture *cap);
-#endif
+    #ifdef OPENCV
+    image get_image_from_stream(CvCapture *cap);
+    #endif
+#else
+extern "C" {
+    #ifdef OPENCV
+    image get_image_from_stream(CvCapture *cap);
+    #endif
+}
 #endif
 void free_image(image m);
 float train_network(network net, data d);
@@ -762,4 +769,7 @@ int *read_intlist(char *s, int *n, int d);
 size_t rand_size_t();
 float rand_normal();
 
+#ifdef __cplusplus
+}
+#endif
 #endif

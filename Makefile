@@ -34,7 +34,11 @@ ARFLAGS=rcs
 OPTS=-Ofast
 LDFLAGS= $(shell pkg-config --libs IlmBase) -lm -pthread 
 COMMON= -Iinclude/ -Isrc/
-CFLAGS=-Wall -Wno-unknown-pragmas -Wfatal-errors -fPIC
+ifeq ($(CC),gcc)
+CFLAGS=-Wall -Wno-unknown-pragmas -Wfatal-errors -fPIC -Wno-unused-variable -Wno-write-strings
+else
+CFLAGS=-Wall -Wno-unknown-pragmas -Wfatal-errors -fPIC -fpermissive -Wno-unused-variable -Wno-write-strings
+endif
 
 ifeq ($(BLAS),1)
 CFLAGS+= -DCBLAS $(shell pkg-config --cflags openblas)

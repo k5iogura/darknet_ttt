@@ -2,6 +2,10 @@
 #define MATRIX_H
 #include "darknet.h"
 
+#ifdef __cplusplus
+#define new New
+#define class Class
+#endif
 matrix copy_matrix(matrix m);
 void print_matrix(matrix m);
 

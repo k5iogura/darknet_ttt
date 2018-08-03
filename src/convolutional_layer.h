@@ -48,5 +48,7 @@ image get_convolutional_weight(convolutional_layer layer, int i);
 int convolutional_out_height(convolutional_layer layer);
 int convolutional_out_width(convolutional_layer layer);
 
+void scale_add_bias(layer l, float *output);
+void normalize_weights(layer l, float *weights);
 #endif
 
