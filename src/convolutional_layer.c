@@ -559,6 +559,55 @@ void normalize_weights(layer l, float *weights){
     }
 }
 
+void col2row_cblas(int sz_col, int sz_row, float* colm_src, float* rowm_dst){
+    int c,r;
+    for(r=0; r<sz_row; r++)
+        cblas_scopy(sz_col, colm_src+r, sz_row, rowm_dst+r*sz_col, 1);
+}
+
+void row2col_major(int sz_col, int sz_row, float *rowm_src, float *rowm_dst){
+    int c,r;
+    int m,n;
+    for(r=0;r<sz_row;r++)
+        for(c=0;c<sz_col;c++){
+            m = r*sz_col + c;
+            n = c*sz_row + r;
+            rowm_dst[n] = rowm_src[m];
+        }
+}
+
+void col2row_major(int sz_col, int sz_row, float *colm_src, float *rowm_dst){
+    int c,r;
+    int m,n;
+    for(c=0;c<sz_col;c++)
+        for(r=0;r<sz_row;r++){
+            m = r*sz_col + c;
+            n = c*sz_row + r;
+            rowm_dst[m] = colm_src[n];
+        }
+}
+
+
+void gemm_ntt(int M, int N, int K, float ALPHA, 
+        float *A, int lda, 
+        float *B, int ldb,
+        float *C, int ldc)
+{
+    int i,j,k;
+    #pragma omp parallel for
+    for(i = 0; i < M; ++i){
+        for(j = 0; j < N; ++j){
+            register float sum = C[i+ldc*j];    //C col-major
+            //register float sum = C[i*ldc+j];    //C row-major
+            for(k = 0; k < K; ++k){
+                sum += ALPHA*A[i*lda+k]*B[j*ldb + k];
+            }
+            C[i+ldc*j] += sum;  //C col-major
+            //C[i*ldc+j] += sum;  //C row-major
+        }
+    }
+}
+
 void forward_convolutional_layer_foldBN(convolutional_layer l, network net)
 {
     int out_h = l.out_h;
@@ -582,7 +631,7 @@ void forward_convolutional_layer_foldBN(convolutional_layer l, network net)
                l.size, l.stride, l.pad, b);
         printf(" WOG=%f ", what_time_is_it_now()-time);
         cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, m, n, k, 1, a, k, b, n, 1, c, n);
-    }else{
+    }else if(0){
         float *a = net.workspace;
         float *b = l.weights;
         float *c = l.output;
@@ -590,8 +639,23 @@ void forward_convolutional_layer_foldBN(convolutional_layer l, network net)
         TensorDim filt_dim={ l.out_c, l.c, l.size, l.size };
         CppConvnetIm2Row(a, net.input, out_w, out_h, k, in_dim, filt_dim, l.stride, l.pad);
         printf(" WOG=%f ", what_time_is_it_now()-time);
-        //cblas_sgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, m, n, k, 1, a, k, b, n, 1, c, n);
-          cblas_sgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, n, m, k, 1, a, n, b, k, 1, c, n);
+        cblas_sgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, n, m, k, 1, a, n, b, k, 1, c, n);
+    }else{
+        float *a = net.workspace;
+        float *b = l.weights;
+        float *c = l.output;
+        float *A = (float*)malloc(sizeof(float)*(l.out_w*l.out_h)*(l.size*l.size*l.c));
+        TensorDim in_dim  ={ 1, l.c, l.h, l.w };
+        TensorDim filt_dim={ l.out_c, l.c, l.size, l.size };
+        CppConvnetIm2Row(a, net.input, out_w, out_h, k, in_dim, filt_dim, l.stride, l.pad);
+        double time=what_time_is_it_now();
+        col2row_cblas(l.c*l.size*l.size, out_w*out_h, a, A);
+        //col2row_major(l.c*l.size*l.size, out_w*out_h, a, A);
+        //row2col_major(l.c*l.size*l.size, out_w*out_h, A, a);
+        printf(" WOG=%f ", what_time_is_it_now()-time);
+        cblas_sgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, n, m, k, 1, a, n, b, k, 1, c, n);
+        //gemm_ntt( n, m, k, 1, A, k, b, k, c, n); //C col-major
+        free(A);
     }
 
     if(!l.batch_normalize){

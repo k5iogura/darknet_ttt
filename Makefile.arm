@@ -24,6 +24,7 @@ ALIB=libdarknet.a
 EXEC=darknet
 OBJDIR=./obj/
 
+#CC=arm-linux-gnueabihf-g++
 CC=arm-linux-gnueabihf-gcc
 CX=arm-linux-gnueabihf-g++
 NVCC=nvcc 
@@ -32,7 +33,11 @@ ARFLAGS=rcs
 OPTS=-Ofast
 LDFLAGS= -lm -pthread 
 COMMON= -Iinclude/ -Isrc/
+ifeq ($(CC),arm-linux-gnueabihf-gcc)
 CFLAGS=-Wall -Wno-unknown-pragmas -Wfatal-errors -Wno-format -fPIC
+else
+CFLAGS=-Wall -Wno-unknown-pragmas -Wfatal-errors -Wno-format -fPIC -fpermissive -Wno-write-strings
+endif
 
 ifeq ($(OPENMP), 1) 
 CFLAGS+= -fopenmp
