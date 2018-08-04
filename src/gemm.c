@@ -1,3 +1,6 @@
+#ifdef __cplusplus
+#include <OpenEXR/half.h>
+#endif
 #include "gemm.h"
 #include "gemm_fpga.h"
 #include "utils.h"
@@ -5,7 +8,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
-#include "fp16.h"
 
 #ifdef CBLAS
 #include <cblas.h>
@@ -81,8 +83,11 @@ void gemm(int TA, int TB, int M, int N, int K, float ALPHA,
 //#define gemm_nn gemm_nn_naive
 //#define gemm_nn gemm_nn_fp
 //#define gemm_nn gemm_nn_hf
-#define gemm_nn gemm_nn_cblas
+#define gemm_nn gemm_nn_hf
+//#define gemm_nn gemm_nn_cblas
 //#define gemm_nn gemm_nn_hetero
+//#define gemm_nt gemm_nt_hf
+#define gemm_nt gemm_nt_naive
 #define FRACT 20
 #define FIXFP int
 #define FIXFPx2 long
@@ -118,33 +123,110 @@ void gemm_nn_fp(int M, int N, int K, float ALPHA,
 }
 
 #ifndef FPGA
-void gemm_nn_hf(int M, int N, int K, float ALPHA, 
+#ifdef __cplusplus
+void gemm_nt_hf_floatIF(int M, int N, int K, float ALPHA, 
         float *A, int lda, 
         float *B, int ldb,
         float *C, int ldc)
 {
     int i,j,k;
-    float maxx,minn;
-    float maxA,minA;
-    float maxC,minC;
-    #pragma omp parallel for
-    for(i = 0,maxx=-10000,maxA=-10000,minn=10000,minA=10000,maxC=-10000,minC=10000; i < M; ++i){
-        for(k = 0; k < K; ++k){
-            register float A_PART = ALPHA*A[i*lda+k];
-            fp16 hfA_PART = f2h(A_PART);
-     //       maxA=(maxA>A[i*lda+k])?maxA:A[i*lda+k];
-     //       minA=(minA<A[i*lda+k])?minA:A[i*lda+k];
-            for(j = 0; j < N; ++j){
-     //           maxx=(maxx>B[k*ldb+j])?maxx:B[k*ldb+j];
-     //           minn=(minn<B[k*ldb+j])?minn:B[k*ldb+j];
-                fp16 hfB = f2h(B[k*ldb+j]);
-                C[i*ldc+j] += h2f(fp16_prod(hfA_PART , hfB));
+    for(i = 0; i < M; ++i){
+        for(j = 0; j < N; ++j){
+            for(k = 0; k < K; ++k){
+                half A_PART = A[i*lda+k];
+                half B_PART = B[k+ldb*j];
+                C[i*ldc+j] += A_PART * B_PART; //OK
             }
         }
-     //   for(j = 0; j < N; ++j){maxC=(maxC>C[i*ldc+j])?maxC:C[i*ldc+j]; minC=(minC<C[i*ldc+j])?minC:C[i*ldc+j];}
     }
-    //printf("A/B/C max/min = %f %f / %f %f / %f %f\n",maxA,minA,maxx,minn,maxC,minC);
 }
+void gemm_nt_hf_halfIF(int M, int N, int K, float ALPHA, 
+        half *A, int lda, 
+        half *B, int ldb,
+        half *C, int ldc)
+{
+    int i,j,k;
+    for(i = 0; i < M; ++i){
+        for(j = 0; j < N; ++j){
+            for(k = 0; k < K; ++k){
+                half A_PART = A[i*lda+k];
+                half B_PART = B[k+ldb*j];
+                C[i*ldc+j] += A_PART * B_PART;
+                //C[i*ldc+j] += A_PART * B[k+ldb*j];
+            }
+        }
+    }
+}
+void gemm_nt_hf(int M, int N, int K, float ALPHA, 
+        float *A, int lda, 
+        float *B, int ldb,
+        float *C, int ldc)
+{
+    int i;
+    half *a=(half*)malloc(sizeof(half)*M*K);
+    half *b=(half*)malloc(sizeof(half)*K*N);
+    half *c=(half*)malloc(sizeof(half)*M*N);
+    for(i=0;i<M*K;i++)a[i]=A[i];
+    for(i=0;i<K*N;i++)b[i]=B[i];
+    for(i=0;i<M*N;i++)c[i]=C[i];
+    gemm_nt_hf_floatIF(M,N,K,ALPHA,A,lda,B,ldb,C,ldc);
+    //gemm_nt_hf_halfIF(M,N,K,ALPHA,a,lda,b,ldb,c,ldc);
+    //for(i=0;i<M*N;i++)C[i]=c[i];
+    free(a);
+    free(b);
+    free(c);
+}
+void gemm_nn_hf_floatIF(int M, int N, int K, float ALPHA, 
+        float *A, int lda, 
+        float *B, int ldb,
+        float *C, int ldc)
+{
+    int i,j,k;
+    for(i = 0; i < M; ++i){
+        for(k = 0; k < K; ++k){
+            register half A_PART = A[i*lda+k];
+            for(j = 0; j < N; ++j){
+                half B_PART= B[k*ldb+j];
+                C[i*ldc+j] += (float)(A_PART * B_PART); //OK
+            }
+        }
+    }
+}
+void gemm_nn_hf_halfIF(int M, int N, int K, float ALPHA, 
+        half *A, int lda, 
+        half *B, int ldb,
+        half *C, int ldc)
+{
+    int i,j,k;
+    for(i = 0; i < M; ++i){
+        for(k = 0; k < K; ++k){
+            half A_PART = A[i*lda+k];
+            for(j = 0; j < N; ++j){
+                C[i*ldc+j] += A_PART * B[k*ldb+j];
+            }
+        }
+    }
+}
+void gemm_nn_hf(int M, int N, int K, float ALPHA, 
+        float *A, int lda, 
+        float *B, int ldb,
+        float *C, int ldc)
+{
+    int i;
+    half *a=(half*)malloc(sizeof(half)*M*K);
+    half *b=(half*)malloc(sizeof(half)*K*N);
+    half *c=(half*)malloc(sizeof(half)*M*N);
+    for(i=0;i<M*K;i++)a[i]=A[i];
+    for(i=0;i<K*N;i++)b[i]=B[i];
+    for(i=0;i<M*N;i++)c[i]=C[i];
+    //gemm_nn_hf_floatIF(M,N,K,ALPHA,A,lda,B,ldb,C,ldc);
+    gemm_nn_hf_halfIF(M,N,K,ALPHA,a,lda,b,ldb,c,ldc);
+    for(i=0;i<M*N;i++)C[i]=c[i];
+    free(a);
+    free(b);
+    free(c);
+}
+#endif
 #endif
 
 void gemm_nn_BcolM(int M, int N, int K, float ALPHA, 
@@ -277,7 +359,7 @@ void gemm_nn_sign(int M, int N, int K,
     }
 }
 
-void gemm_nt(int M, int N, int K, float ALPHA, 
+void gemm_nt_naive(int M, int N, int K, float ALPHA, 
         float *A, int lda, 
         float *B, int ldb,
         float *C, int ldc)
