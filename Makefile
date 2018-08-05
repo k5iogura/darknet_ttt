@@ -3,6 +3,7 @@ export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:/opt/OpenBLAS/lib/pkgconfig
 GPU=0
 CUDNN=0
 OPENCV?=1
+OPENEXR=0
 DEBUG?=0
 FPGA?=0
 FPGA_EMU?=0
@@ -26,18 +27,27 @@ ALIB=libdarknet.a
 EXEC=darknet
 OBJDIR=./obj/
 
-CC=g++
+CC=gcc
 CXX=g++
 NVCC=nvcc 
+
 AR=ar
 ARFLAGS=rcs
 OPTS=-Ofast
-LDFLAGS= $(shell pkg-config --libs IlmBase) -lm -pthread 
-COMMON= -Iinclude/ -Isrc/
-ifeq ($(CC),gcc)
-CFLAGS=-Wall -Wno-unknown-pragmas -Wfatal-errors -fPIC -Wno-unused-variable -Wno-write-strings
+
+LDFLAGS= -lm -pthread 
+COMMON = -Iinclude/ -Isrc/
+
+ifeq ($(OPENEXR),1)
+CC=$(CXX)
+CFLAGS+= -DOPENEXR $(shell pkg-config --cflags IlmBase)
+LDFLAGS+=$(shell pkg-config --libs   IlmBase)
+endif
+
+ifeq ($(CC),$(CXX))
+CFLAGS+=-Wall -Wno-unknown-pragmas -Wfatal-errors -fPIC -fpermissive -Wno-unused-variable -Wno-write-strings
 else
-CFLAGS=-Wall -Wno-unknown-pragmas -Wfatal-errors -fPIC -fpermissive -Wno-unused-variable -Wno-write-strings
+CFLAGS+=-Wall -Wno-unknown-pragmas -Wfatal-errors -fPIC -Wno-unused-variable -Wno-write-strings
 endif
 
 ifeq ($(BLAS),1)
