@@ -443,6 +443,74 @@ void gemm_cpu(int TA, int TB, int M, int N, int K, float ALPHA,
         gemm_tt(M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
 }
 
+void gemm_ntt(int M, int N, int K, float ALPHA, 
+        float *A, int lda, 
+        float *B, int ldb,
+        float *C, int ldc)  // FPGA with im2row and col2row Model
+{
+    int i,j,k;
+    #pragma omp parallel for
+    for(i = 0; i < M; ++i){
+        for(j = 0; j < N; ++j){
+            register float sum = 0;
+            for(k = 0; k < K; ++k){
+                sum += ALPHA*A[i*lda+k]*B[j*ldb + k];
+            }
+            C[i+ldc*j] += sum;  //C col-major
+        }
+    }
+}
+
+void gemm_ntn(int M, int N, int K, float ALPHA, 
+        float *A, int lda, 
+        float *B, int ldb,
+        float *C, int ldc)  // FPGA with im2col_col_major Model
+{
+    int i,j,k;
+    #pragma omp parallel for
+    for(i = 0; i < M; ++i){
+        for(j = 0; j < N; ++j){
+            register float sum = 0;
+            for(k = 0; k < K; ++k){
+                sum += ALPHA*A[i*lda+k]*B[j*ldb + k];
+            }
+            C[i*ldc+j] += sum;  //C row-major
+        }
+    }
+}
+
+void gemm2(int TA, int TB, int TC,
+        int M, int N, int K, float ALPHA, 
+        float *A, int lda, 
+        float *B, int ldb,
+        float BETA,
+        float *C, int ldc)
+{
+    int i, j;
+    if(!TC)
+        for(i = 0; i < M; ++i) for(j = 0; j < N; ++j) C[i*ldc + j] *= BETA;
+    else
+        for(i = 0; i < M; ++i) for(j = 0; j < N; ++j) C[i + ldc*j] *= BETA;
+                                 // A B C  R:Row-Major C:Col-Major
+    if(!TA && !TB && !TC){       // R R R
+#ifdef FPGA
+        if(!FPGA_init){FPGA_init=1;gemm_fpga_init();}
+        gemm_nn_fpga(M, N, K, ALPHA, A, lda, B, ldb, C, ldc);
+#else
+        gemm_nn(M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
+#endif
+    }else if( TA && !TB && !TC)  // C R R
+        gemm_tn (M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
+    else if(!TA &&  TB &&  TC)   // R C C for FPGA with im2row and col2row Model
+        gemm_ntt(M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
+    else if(!TA &&  TB && !TC)   // R C R for FPGA with im2col_col_major Model
+        gemm_ntn(M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
+    else if( TA &&  TB && !TC)   // C C R
+        gemm_tt(M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
+    else
+        error("not support TA,TB,TC");
+}
+
 #ifdef GPU
 
 #include <math.h>
