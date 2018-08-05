@@ -463,8 +463,8 @@ void gemm_ntt(int M, int N, int K, float ALPHA,
         float *C, int ldc)  // FPGA with im2row and col2row Model
 {
     int i,j,k;
-    for(i = 0; i < M; ++i){
-        for(j = 0; j < N; ++j){
+    for(j = 0; j < N; ++j){
+        for(i = 0; i < M; ++i){
             register float sum = 0;
             for(k = 0; k < K; ++k){
                 sum += ALPHA*A[i*lda+k]*B[j*ldb + k];
