@@ -5,6 +5,10 @@
 #include <string.h>
 #include <pthread.h>
 
+#ifdef OPENEXR
+#include <OpenEXR/half.h>
+#endif
+
 #define SECRET_NUM -1234
 extern int gpu_index;
 
@@ -246,6 +250,16 @@ struct layer{
     float * rolling_mean;
     float * rolling_variance;
 
+#ifdef OPENEXR
+    half * biased_output_hf;    //add
+    half * biases_hf;           //add
+    half * scales_hf;           //add
+    half * weights_hf;          //add
+    half * output_hf;           //add
+    half * rolling_mean_hf;     //add
+    half * rolling_variance_hf; //add
+#endif
+
     float * x;
     float * x_norm;
 
@@ -472,6 +486,11 @@ typedef struct network{
     int train;
     int index;
     float *cost;
+
+#ifdef OPENEXR
+    half *input_hf;     //add
+    half *workspace_hf; //add
+#endif
 
 #ifdef GPU
     float *input_gpu;

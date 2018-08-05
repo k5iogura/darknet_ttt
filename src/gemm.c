@@ -80,10 +80,10 @@ void gemm(int TA, int TB, int M, int N, int K, float ALPHA,
 }
 
 //#define gemm_nn gemm_nn_BcolM   // need using im2col_cpu2
-//#define gemm_nn gemm_nn_naive
+#define gemm_nn gemm_nn_naive
 //#define gemm_nn gemm_nn_fp
 //#define gemm_nn gemm_nn_hf
-#define gemm_nn gemm_nn_hf
+//#define gemm_nn gemm_nn_hf
 //#define gemm_nn gemm_nn_cblas
 //#define gemm_nn gemm_nn_hetero
 //#define gemm_nt gemm_nt_hf

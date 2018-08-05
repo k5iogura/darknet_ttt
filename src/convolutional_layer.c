@@ -247,6 +247,13 @@ convolutional_layer make_convolutional_layer(int batch, int h, int w, int c, int
     l.biased_output = calloc(l.batch*l.outputs, sizeof(float));    //add
     l.delta  = calloc(l.batch*l.outputs, sizeof(float));
 
+#ifdef OPENEXR
+    l.weights_hf = (half*)calloc(c*n*size*size, sizeof(half));      //add
+    l.biases_hf  = (half*)calloc(n, sizeof(half));                  //add
+    l.output_hf  = (half*)calloc(l.batch*l.outputs, sizeof(half));  //add
+    l.biased_output_hf = (half*)calloc(l.batch*l.outputs, sizeof(half));//add
+#endif
+
     //l.forward = forward_convolutional_layer;  //remove original
     //l.forward = forward_convolutional_layer_cpu; //remove for test version
     l.forward = forward_convolutional_layer_foldBN;    //add for fold batch normalize
@@ -288,6 +295,13 @@ convolutional_layer make_convolutional_layer(int batch, int h, int w, int c, int
         l.rolling_variance = calloc(n, sizeof(float));
         l.x = calloc(l.batch*l.outputs, sizeof(float));
         l.x_norm = calloc(l.batch*l.outputs, sizeof(float));
+
+#ifdef OPENEXR
+        l.scales_hf           = (half*)calloc(n, sizeof(half)); //add
+        l.rolling_mean_hf     = (half*)calloc(n, sizeof(half)); //add
+        l.rolling_variance_hf = (half*)calloc(n, sizeof(half)); //add
+#endif
+
     }
     if(adam){
         l.m = calloc(c*n*size*size, sizeof(float));
@@ -585,6 +599,60 @@ void col2row_major(int sz_col, int sz_row, float *colm_src, float *rowm_dst){
             n = c*sz_row + r;
             rowm_dst[m] = colm_src[n];
         }
+}
+
+void forward_convolutional_layer_hf(convolutional_layer l, network net)
+{
+    int out_h = l.out_h;
+    int out_w = l.out_w;
+    double time=what_time_is_it_now();
+
+    //copy_cpu(l.outputs*l.batch, l.biased_output, 1, l.output, 1);
+    cblas_scopy(l.outputs*l.batch, l.biased_output, 1, l.output, 1);
+
+    // with im2col version
+    int m = l.n;
+    int k = l.size*l.size*l.c;
+    int n = out_h*out_w;
+    if(0){ // with FPGA Model
+        float *a = l.weights;
+        float *b = net.workspace;
+        float *c = l.output;
+
+        im2col_cpu_col_major(net.input, l.c, l.h, l.w, l.size, l.stride, l.pad, b);
+        printf(" WOG=%f ", what_time_is_it_now()-time);
+        gemm2(0, 1, 0, m, n, k, 1, a, k, b, k, 1, c, n);    //OK for instead of FPGA Model
+    }
+
+    // with im2row version
+    m = out_h*out_w;
+    k = l.size*l.size*l.c;
+    n = l.n;
+    if(0){ // with FPGA Model
+        float *a = net.workspace;
+        float *b = l.weights;
+        float *c = l.output;
+        float *A = (float*)malloc(sizeof(float)*(l.out_w*l.out_h)*(l.size*l.size*l.c));
+        float *B = (float*)malloc(sizeof(float)*k*m);
+        TensorDim in_dim  ={ 1, l.c, l.h, l.w };
+        TensorDim filt_dim={ l.out_c, l.c, l.size, l.size };
+        CppConvnetIm2Row(a, net.input, out_w, out_h, k, in_dim, filt_dim, l.stride, l.pad);
+        double time=what_time_is_it_now();
+        //col2row_cblas(l.c*l.size*l.size, out_w*out_h, a, A);
+        col2row_major(l.c*l.size*l.size, out_w*out_h, a, A);
+        //col2row_major(k,m,b,B);
+        //row2col_major(l.c*l.size*l.size, out_w*out_h, A, a);
+        printf(" WOG=%f ", what_time_is_it_now()-time);
+        gemm2(0,1,1, m, n, k, 1, A, k, b, k, 1, c, m);     //OK for instead of FPGA Model
+        free(A);
+    }
+
+    if(!l.batch_normalize){
+        //add_bias(l.output, l.biases, l.batch, l.n, out_h*out_w);
+        add_bias_cblas(l.output, l.biases, l.batch, l.n, out_h*out_w);
+    }
+
+    activate_array(l.output, m*n*l.batch, l.activation);
 }
 
 void forward_convolutional_layer_foldBN(convolutional_layer l, network net)

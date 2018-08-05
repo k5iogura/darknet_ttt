@@ -202,9 +202,23 @@ network make_network(int n)
 
 void forward_network(network net)
 {
-    int i;
+    int i,j;
 #ifdef GET_LAYER_TIME
     double time, total=0;
+#endif
+#ifdef OPENEXR
+    for(i = 0; i < net.n; ++i){
+        layer l = net.layers[i];
+        for(j = 0;j < l.c*l.n*l.size*l.size; j++) l.weights_hf[j] = l.weights[j];
+        for(j = 0;j < l.n; j++)                   l.biases_hf[j] = l.biases[j];
+        for(j = 0;j < l.outputs; j++)                   l.biased_output_hf[j] = l.biased_output[j];
+        for(j = 0;j < l.outputs; j++)             l.output_hf[j] = l.output[j];
+        if(l.batch_normalize){
+            for(j = 0;j < l.n; j++)               l.scales_hf[j] = l.scales[j];
+            for(j = 0;j < l.n; j++)               l.rolling_mean_hf[j] = l.rolling_mean[j];
+            for(j = 0;j < l.n; j++)               l.rolling_variance_hf[j] = l.variance[j];
+        }
+    }
 #endif
     for(i = 0; i < net.n; ++i){
 #ifdef GET_LAYER_TIME
