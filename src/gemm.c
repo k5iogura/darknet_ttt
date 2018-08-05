@@ -394,25 +394,39 @@ void gemm_tn(int M, int N, int K, float ALPHA,
     }
 }
 
-void gemm_tt(int M, int N, int K, float ALPHA, 
+void gemm_ttn(int M, int N, int K, float ALPHA, 
         float *A, int lda, 
         float *B, int ldb,
         float *C, int ldc)
 {
     int i,j,k;
-    #pragma omp parallel for
     for(i = 0; i < M; ++i){
         for(j = 0; j < N; ++j){
             register float sum = 0;
             for(k = 0; k < K; ++k){
                 sum += ALPHA*A[i+k*lda]*B[k+j*ldb];
             }
-            //C[i*ldc+j] += sum;    // BUG terrible!:-)
-            C[i+ldc*j] += sum;
+            C[i*ldc+j] += sum;
         }
     }
 }
 
+void gemm_ttt(int M, int N, int K, float ALPHA, 
+        float *A, int lda, 
+        float *B, int ldb,
+        float *C, int ldc)
+{
+    int i,j,k;
+    for(i = 0; i < M; ++i){
+        for(j = 0; j < N; ++j){
+            register float sum = 0;
+            for(k = 0; k < K; ++k){
+                sum += ALPHA*A[i+k*lda]*B[k+j*ldb];
+            }
+            C[i+ldc*j] += sum;
+        }
+    }
+}
 
 static int FPGA_init=0;
 void gemm_cpu(int TA, int TB, int M, int N, int K, float ALPHA, 
@@ -440,7 +454,7 @@ void gemm_cpu(int TA, int TB, int M, int N, int K, float ALPHA,
     else if(!TA && TB)
         gemm_nt(M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
     else
-        gemm_tt(M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
+        gemm_ttn(M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
 }
 
 void gemm_ntt(int M, int N, int K, float ALPHA, 
@@ -449,7 +463,6 @@ void gemm_ntt(int M, int N, int K, float ALPHA,
         float *C, int ldc)  // FPGA with im2row and col2row Model
 {
     int i,j,k;
-    #pragma omp parallel for
     for(i = 0; i < M; ++i){
         for(j = 0; j < N; ++j){
             register float sum = 0;
@@ -467,7 +480,6 @@ void gemm_ntn(int M, int N, int K, float ALPHA,
         float *C, int ldc)  // FPGA with im2col_col_major Model
 {
     int i,j,k;
-    #pragma omp parallel for
     for(i = 0; i < M; ++i){
         for(j = 0; j < N; ++j){
             register float sum = 0;
@@ -505,8 +517,10 @@ void gemm2(int TA, int TB, int TC,
         gemm_ntt(M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
     else if(!TA &&  TB && !TC)   // R C R for FPGA with im2col_col_major Model
         gemm_ntn(M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
+    else if( TA &&  TB &&  TC)   // C C C
+        gemm_ttt(M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
     else if( TA &&  TB && !TC)   // C C R
-        gemm_tt(M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
+        gemm_ttn(M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
     else
         error("not support TA,TB,TC");
 }

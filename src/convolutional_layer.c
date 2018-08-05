@@ -616,7 +616,7 @@ void forward_convolutional_layer_foldBN(convolutional_layer l, network net)
 
         im2col_cpu_col_major(net.input, l.c, l.h, l.w, l.size, l.stride, l.pad, b);
         printf(" WOG=%f ", what_time_is_it_now()-time);
-        gemm2(0, 1, 0, m, n, k, 1, a, k, b, k, 1, c, n);    //OK for instead of FPGA
+        gemm2(0, 1, 0, m, n, k, 1, a, k, b, k, 1, c, n);    //OK for instead of FPGA Model
     }
 
     // with im2row version
@@ -647,8 +647,18 @@ void forward_convolutional_layer_foldBN(convolutional_layer l, network net)
         //col2row_major(k,m,b,B);
         //row2col_major(l.c*l.size*l.size, out_w*out_h, A, a);
         printf(" WOG=%f ", what_time_is_it_now()-time);
-        gemm2(0,1,1, m, n, k, 1, A, k, b, k, 1, c, m);     //OK for instead of FPGA
+        gemm2(0,1,1, m, n, k, 1, A, k, b, k, 1, c, m);     //OK for instead of FPGA Model
         free(A);
+    }else if(0){
+        float *a = net.workspace;
+        float *b = l.weights;
+        float *c = l.output;
+        TensorDim in_dim  ={ 1, l.c, l.h, l.w };
+        TensorDim filt_dim={ l.out_c, l.c, l.size, l.size };
+        CppConvnetIm2Row(a, net.input, out_w, out_h, k, in_dim, filt_dim, l.stride, l.pad);
+        double time=what_time_is_it_now();
+        printf(" WOG=%f ", what_time_is_it_now()-time);
+        gemm2(1,1,1, m, n, k, 1, a, m, b, k, 1, c, m);     //OK BLAS Spec
     }
 
     if(!l.batch_normalize){
