@@ -372,7 +372,7 @@ void gemm_nt_naive(int M, int N, int K, float ALPHA,
             for(k = 0; k < K; ++k){
                 sum += ALPHA*A[i*lda+k]*B[j*ldb + k];
             }
-            C[i*ldc+j] += sum;
+            C[i+ldc*j] += sum;
         }
     }
 }
@@ -425,7 +425,7 @@ void gemm_cpu(int TA, int TB, int M, int N, int K, float ALPHA,
     int i, j;
     for(i = 0; i < M; ++i){
         for(j = 0; j < N; ++j){
-            C[i*ldc + j] *= BETA;
+//            C[i*ldc + j] *= BETA; //BUG :C-matrix is either of row or col-major
         }
     }
     if(!TA && !TB){

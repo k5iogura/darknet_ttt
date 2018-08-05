@@ -602,8 +602,8 @@ void gemm_ntt(int M, int N, int K, float ALPHA,
             for(k = 0; k < K; ++k){
                 sum += ALPHA*A[i*lda+k]*B[j*ldb + k];
             }
-            C[i+ldc*j] += sum;  //C col-major
-            //C[i*ldc+j] += sum;  //C row-major
+            C[i+ldc*j] = sum;  //C col-major
+            //C[i*ldc+j] = sum;  //C row-major
         }
     }
 }
@@ -640,7 +640,7 @@ void forward_convolutional_layer_foldBN(convolutional_layer l, network net)
     int m = l.n;
     int k = l.size*l.size*l.c;
     int n = out_h*out_w;
-    if(0){
+    if(1){
         float *a = l.weights;
         float *b = net.workspace;
         float *c = l.output;
@@ -648,8 +648,8 @@ void forward_convolutional_layer_foldBN(convolutional_layer l, network net)
         im2col_cpu(net.input, l.c, l.h, l.w, 
                l.size, l.stride, l.pad, b);
         printf(" WOG=%f ", what_time_is_it_now()-time);
-        //cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, m, n, k, 1, a, k, b, n, 1, c, n);
-        gemm(0, 0, m, n, k, 1, a, k, b, n, 1, c, n);
+        cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, m, n, k, 1, a, k, b, n, 1, c, n); //OK
+        //gemm(0, 0, m, n, k, 1, a, k, b, n, 1, c, n);    //OK but diff?
     }
     m = out_h*out_w;
     k = l.size*l.size*l.c;
@@ -662,7 +662,7 @@ void forward_convolutional_layer_foldBN(convolutional_layer l, network net)
         TensorDim filt_dim={ l.out_c, l.c, l.size, l.size };
         CppConvnetIm2Row(a, net.input, out_w, out_h, k, in_dim, filt_dim, l.stride, l.pad);
         printf(" WOG=%f ", what_time_is_it_now()-time);
-        cblas_sgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, m, n, k, 1, a, m, b, k, 1, c, m);
+        cblas_sgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, m, n, k, 1, a, m, b, k, 1, c, m); //OK
     }else if(0){
         float *a = net.workspace;
         float *b = l.weights;
@@ -678,11 +678,10 @@ void forward_convolutional_layer_foldBN(convolutional_layer l, network net)
         //col2row_major(k,m,b,B);
         //row2col_major(l.c*l.size*l.size, out_w*out_h, A, a);
         printf(" WOG=%f ", what_time_is_it_now()-time);
-        //gemm(0, 1, n, m, k, 1, A, k, b, k, 1, c, m);
-        //gemm(0, 0, n, m, k, 1, A, k, b, m, 1, c, m);
-        gemm_ntt( m, n, k, 1, A, k, b, k, c, m); //C col-major
+        //gemm(0, 1, m, n, k, 1, A, k, b, k, 1, c, m);    //OK
+        gemm_ntt( m, n, k, 1, A, k, b, k, c, m); //C col-major  //OK
         free(A);
-    }else if(1){
+    }else if(0){
         float *a = net.workspace;
         float *b = l.weights;
         float *c = l.output;
@@ -695,9 +694,9 @@ void forward_convolutional_layer_foldBN(convolutional_layer l, network net)
         //col2row_major(l.c*l.size*l.size, out_w*out_h, a, A);
         //row2col_major(l.c*l.size*l.size, out_w*out_h, A, a);
         printf(" WOG=%f ", what_time_is_it_now()-time);
-        //cblas_sgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, m, n, k, 1, a, m, b, k, 1, c, m);
+        cblas_sgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, m, n, k, 1, a, m, b, k, 1, c, m); //OK
         //gemm_ntn( m, n, k, 1, A, k, b, k, c, n); //C row-major    NG
-        gemm_ntt( m, n, k, 1, A, k, b, k, c, m); //C col-major
+        //gemm_ntt( m, n, k, 1, A, k, b, k, c, m); //C col-major  //OK
         free(A);
     }
 
