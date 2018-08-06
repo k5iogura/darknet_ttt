@@ -6,7 +6,7 @@ OPENCV?=1
 OPENEXR=0
 DEBUG?=0
 FPGA?=0
-FPGA_EMU?=0
+FPGA_EMU?=1
 VIEW_TIME=1
 FOLDBN=1
 FP32=0
@@ -65,7 +65,7 @@ FPGA_DEVICE=-march=emulator
 CFLAGS+= -DFPGA
 OBJ+=gemm_fpga.o
 CFLAGS+= $(shell aocl compile-config)
-LDFLAGS+= $(shell aocl link-config)
+LDFLAGS+= $(shell aocl link-config)	-lacl_emulator_kernel_rt
 else
 ifeq ($(FPGA),1)
 FPGA_DEVICE=
