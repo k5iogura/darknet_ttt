@@ -85,17 +85,13 @@ OBJ+=sdl_image.o
 endif
 
 ifeq ($(FPGA),1)
-ALTERAOCLSDKROOT    =/home/ogura/altera/15.1/hdl
-AOCL_COMPILE_CONFIG =-I/home/ogura/altera/15.1/hld/host/include
-AOCL_LINK_CONFIG    =-L/home/ogura/altera/15.1/hld/board/terasic/de1soc/arm32/lib -L/home/ogura/altera/15.1/hld/host/arm32/lib -Wl,--no-as-needed -lalteracl  -lalterahalmmd -lalterammdpcie -lelf -lrt -ldl
-CFLAGS+= -DFPGA $(AOCL_COMPILE_CONFIG)
-LDFLAGS+=$(AOCL_LINK_CONFIG)
+#FPGA_DEVICE=-march=emulator
+CFLAGS+= -DFPGA $(shell aocl compile-config)
+LDFLAGS+= $(shell aocl link-config)	-lacl_emulator_kernel_rt
 OBJ+=gemm_fpga.o
 endif
 
 ifeq ($(CBLAS),1)
-#COMMON+= -DCBLAS -I/home/20076433/Darknet/OpenEXR_BLAS/usr/include/
-#LDFLAGS+=-L/home/20076433/Darknet/OpenEXR_BLAS/usr/lib/arm-linux-gnueabihf -lopenblas -lImath -lHalf -lIex -lIlmThread -lpthread -lstdc++
 COMMON+= -DCBLAS $(shell pkg-config --cflags openblas) $(pkg-config --cflags IlmBase)
 LDFLAGS+= $(shell pkg-config --libs openblas) $(shell pkg-config --libs IlmBase) -lstdc++
 endif
