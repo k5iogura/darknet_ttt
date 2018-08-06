@@ -611,7 +611,9 @@ void forward_convolutional_layer_hf(convolutional_layer l, network net)
     //copy_cpu(l.outputs*l.batch, l.biased_output, 1, l.output, 1);
     cblas_scopy(l.outputs*l.batch, l.biased_output, 1, l.output, 1);
 
+#ifdef FPGA
     if(!get_FPGA_init()){set_FPGA_init();gemm_fpga_init();}
+#endif
 
     // with im2col version
     int m = l.n;

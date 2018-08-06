@@ -14,7 +14,9 @@
 #define MEM_SIZE (128)
 #define MAX_SOURCE_SIZE (0x500000)
 
+#ifdef FPGA
 #include "cl_body.h"
+#endif
 
 //static cl_device_id device_id = NULL;
 static cl_context context = NULL;

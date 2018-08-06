@@ -107,6 +107,7 @@ void contextQ(cl_device_id device_Id, cl_context *conteXt, cl_command_queue *que
 }
 
 cl_program cProgram(const char*fileName, cl_context context, cl_device_id device_id){
+    int i;
     const unsigned char *source_str;
     size_t source_size;
     cl_program program = NULL;
@@ -145,7 +146,7 @@ cl_program cProgram(const char*fileName, cl_context context, cl_device_id device
 
     char name[64];
     size_t info_size;
-    for(int i=0;i<(int)n_kernels;i++){
+    for(i=0;i<(int)n_kernels;i++){
         (void)clGetKernelInfo(kernels[i],CL_KERNEL_FUNCTION_NAME,64,name,&info_size);
         printf("In Program kernel[%d] name = %s\n",i,name);
     //    clReleaseKernel(kernels[i]);
