@@ -1,6 +1,11 @@
 #ifndef GEMM_H
 #define GEMM_H
 
+void set_FPGA_init();
+void unset_FPGA_init();
+int  get_FPGA_init();
+int gemm_fpga_init ();
+
 void gemm_bin(int M, int N, int K, float ALPHA, 
         char  *A, int lda, 
         float *B, int ldb,

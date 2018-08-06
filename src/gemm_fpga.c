@@ -14,113 +14,31 @@
 #define MEM_SIZE (128)
 #define MAX_SOURCE_SIZE (0x500000)
 
-static cl_device_id device_id = NULL;
+#include "cl_body.h"
+
+//static cl_device_id device_id = NULL;
 static cl_context context = NULL;
-static cl_command_queue command_queue = NULL;
+static cl_command_queue command_queue;
 static cl_mem memobjA = NULL;
 static cl_mem memobjB = NULL;
 static cl_mem memobjC = NULL;
 static cl_program program = NULL;
 static cl_kernel kernel = NULL;
-static cl_platform_id platform_id = NULL;
+static cl_kernel kernels[MAX_ENV];
+#define GEMM9W 0
+#define GEMMfW 1
+//static cl_platform_id platform_id = NULL;
 
 int gemm_fpga_init () {
-  int i,j,k;
-  cl_uint ret_num_devices;
-  cl_uint ret_num_platforms;
-  cl_int ret;
-  cl_int ret1,ret2,ret3;
-
-  FILE *fp;
-  char fileName[] = "./gemm1.aocx";
-  const unsigned char *source_str;
-  size_t source_size;
-
-  fprintf(stderr,"gemm_fpga_init_start\n");
-/* Load the source code containing the kernel*/
-  fp = fopen (fileName, "r");
-  if (!fp) {
-	fprintf (stderr, "Failed to load kernel.\n");
-	exit (1);
-  }else printf("fileName=%s\n",fileName);
-  source_str = (const unsigned char *) malloc (MAX_SOURCE_SIZE);
-  source_size = fread ((void*)source_str, 1, MAX_SOURCE_SIZE, fp);
-  fclose (fp);
-
-/* Get Platform and Device Info */
-  ret = clGetPlatformIDs (1, &platform_id, &ret_num_platforms);
-  if(ret != CL_SUCCESS){
-	fprintf(stderr,"Faild clGetPlatform %d\n",ret);
-	exit(ret);
-  }
-  ret =
-	clGetDeviceIDs (platform_id, CL_DEVICE_TYPE_DEFAULT, 1, &device_id,
-					&ret_num_devices);
-  if(ret != CL_SUCCESS){
-	fprintf(stderr,"Faild clGetDeviceIDs %d\n",ret);
-	exit(ret);
-  }
-  cl_ulong local_mem;
-  clGetDeviceInfo(device_id, CL_DEVICE_LOCAL_MEM_SIZE, sizeof(cl_ulong),&local_mem,NULL);
-  fprintf(stderr,"LOCAL_MEM_SIZE=%lu\n",local_mem);
-
-/* Create OpenCL context */
-  context = clCreateContext (NULL, 1, &device_id, NULL, NULL, &ret);
-  if(ret != CL_SUCCESS){
-	fprintf(stderr,"Faild clCreateContext %d\n",ret);
-	exit(ret);
-  }
-
-/* Create Command Queue */
-  command_queue = clCreateCommandQueue (context, device_id, 0, &ret);
-  if(ret != CL_SUCCESS){
-	fprintf(stderr,"Faild clCreateCommandQueue %d\n",ret);
-	exit(ret);
-  }
-
-/* Create Kernel Program from the source */
-  fprintf(stderr,"load from source onX86\n");
-  program =
-	clCreateProgramWithSource (context, 1, (const char **) &source_str,
-							   (const size_t *) &source_size, &ret);
-  if(ret != CL_SUCCESS){
-	fprintf(stderr,"Faild clCreateProgramWithXXXX %d\n",ret);
-	exit(ret);
-  }
-
-/* Build Kernel Program */
-  ret = clBuildProgram (program, 1, &device_id, NULL, NULL, NULL);
-  if(ret != CL_SUCCESS){
-	fprintf(stderr,"Faild clBuildProgram %d\n",ret);
-	exit(ret);
-  }
-
-  cl_kernel kernels[10];
-  cl_uint n_kernels=1;
-  ret = clCreateKernelsInProgram(program,1,kernels,&n_kernels);
-  fprintf(stderr,"In Program kernels = %d\n",n_kernels);
-  if(ret != CL_SUCCESS){
-	fprintf(stderr,"Faild clCreateKernelsInProgram %d\n",ret);
-//	exit(ret);
-  }else{
-
-	  char name[64];
-	  size_t info_size;
-	  for(i=0;i<n_kernels;i++){
-		  ret = clGetKernelInfo(kernels[i],CL_KERNEL_FUNCTION_NAME,32,name,&info_size);
-		  fprintf(stderr,"In Program kernel[%d] name = %s\n",i,name);
-		  clReleaseKernel(kernels[i]);
-	  }
-  }
-
-/* Create OpenCL Kernel */
-  char kernel_name[128]="gemm_nn";
-  kernel = clCreateKernel (program, kernel_name, &ret);
-  if(ret != CL_SUCCESS){
-	fprintf(stderr,"Faild clCreateKernel %d\n",ret);
-	exit(ret);
-  }else{fprintf(stderr,"Initialization completed kernel=%s\n",kernel_name);}
-  return ret;
+    const char *k_name[2]={"gemm_nn9W","gemm_nnfW"};
+    find_CnKQ(
+        "Intel(R) FPGA SDK for OpenCL(TM)",
+        "gemm1_emu.aocx",
+        2,
+        k_name,
+        &context, kernels, &command_queue
+    );
+    return 0;
 }
 
 void gemm_nn_fpga(int M, int N, int K, float ALPHA, 
@@ -138,6 +56,12 @@ void gemm_nn_fpga(int M, int N, int K, float ALPHA,
 	fprintf(stderr,"Faild clCreateBuffer %d %d %d\n",ret1,ret2,ret3);
 	exit(ret3);
   }
+
+  if(!(K%27))
+      kernel = kernels[GEMM9W];
+  else
+      kernel = kernels[GEMMfW];
+
 /* Set OpenCL Kernel Parameters */
   ret|= clSetKernelArg (kernel, 0, sizeof (cl_int),  &M);
   ret|= clSetKernelArg (kernel, 1, sizeof (cl_int),  &N);

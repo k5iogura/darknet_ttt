@@ -429,6 +429,10 @@ void gemm_ttt(int M, int N, int K, float ALPHA,
 }
 
 static int FPGA_init=0;
+void set_FPGA_init(){FPGA_init=1;}
+void unset_FPGA_init(){FPGA_init=0;}
+int  get_FPGA_init(){return FPGA_init;}
+
 void gemm_cpu(int TA, int TB, int M, int N, int K, float ALPHA, 
         float *A, int lda, 
         float *B, int ldb,
@@ -504,22 +508,22 @@ void gemm2(int TA, int TB, int TC,
     else
         for(i = 0; i < M; ++i) for(j = 0; j < N; ++j) C[i + ldc*j] *= BETA;
                                  // A B C  R:Row-Major C:Col-Major
-    if(!TA && !TB && !TC){       // R R R
+    if(!TA && !TB && !TC){       // R R R   0 0 0
 #ifdef FPGA
         if(!FPGA_init){FPGA_init=1;gemm_fpga_init();}
         gemm_nn_fpga(M, N, K, ALPHA, A, lda, B, ldb, C, ldc);
 #else
         gemm_nn(M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
 #endif
-    }else if( TA && !TB && !TC)  // C R R
+    }else if( TA && !TB && !TC)  // C R R   1 0 0
         gemm_tn (M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
-    else if(!TA &&  TB &&  TC)   // R C C for FPGA with im2row and col2row Model
+    else if(!TA &&  TB &&  TC)   // R C C   0 1 1 for FPGA with im2row and col2row Model
         gemm_ntt(M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
-    else if(!TA &&  TB && !TC)   // R C R for FPGA with im2col_col_major Model
+    else if(!TA &&  TB && !TC)   // R C R   0 1 0 for FPGA with im2col_col_major Model
         gemm_ntn(M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
-    else if( TA &&  TB &&  TC)   // C C C
+    else if( TA &&  TB &&  TC)   // C C C   1 1 1
         gemm_ttt(M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
-    else if( TA &&  TB && !TC)   // C C R
+    else if( TA &&  TB && !TC)   // C C R   1 1 0
         gemm_ttn(M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
     else
         error("not support TA,TB,TC");

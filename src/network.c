@@ -209,6 +209,7 @@ void forward_network(network net)
 #ifdef OPENEXR
     for(i = 0; i < net.n; ++i){
         layer l = net.layers[i];
+        if(l.type != CONVOLUTIONAL) continue;
         for(j = 0;j < l.c*l.n*l.size*l.size; j++) l.weights_hf[j] = l.weights[j];
         for(j = 0;j < l.n; j++)                   l.biases_hf[j] = l.biases[j];
         for(j = 0;j < l.outputs; j++)                   l.biased_output_hf[j] = l.biased_output[j];
