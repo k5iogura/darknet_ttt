@@ -29,6 +29,7 @@ convolutional_layer make_convolutional_layer(int batch, int h, int w, int c, int
 void resize_convolutional_layer(convolutional_layer *layer, int w, int h);
 void forward_convolutional_layer_kn2row(const convolutional_layer layer, network net); //add for test kn2row
 void forward_convolutional_layer_foldBN(const convolutional_layer layer, network net); //add for test fold batch normalize
+void forward_convolutional_layer_hf(const convolutional_layer layer, network net); //add for test fold batch normalize
 void forward_convolutional_layer_cpu(const convolutional_layer layer, network net); //add for test fold batch normalize
 void forward_convolutional_layer(const convolutional_layer layer, network net); //original
 void update_convolutional_layer(convolutional_layer layer, update_args a);

@@ -256,8 +256,9 @@ convolutional_layer make_convolutional_layer(int batch, int h, int w, int c, int
 
     //l.forward = forward_convolutional_layer;  //remove original
     //l.forward = forward_convolutional_layer_cpu; //remove for test version
-    l.forward = forward_convolutional_layer_foldBN;    //add for fold batch normalize
+    //l.forward = forward_convolutional_layer_foldBN;    //add for fold batch normalize
     //l.forward = forward_convolutional_layer_kn2row;    //add for fold batch normalize
+    l.forward = forward_convolutional_layer_hf;    //add for FPGA
     l.backward = backward_convolutional_layer;
     l.update = update_convolutional_layer;
     if(binary){
@@ -610,11 +611,13 @@ void forward_convolutional_layer_hf(convolutional_layer l, network net)
     //copy_cpu(l.outputs*l.batch, l.biased_output, 1, l.output, 1);
     cblas_scopy(l.outputs*l.batch, l.biased_output, 1, l.output, 1);
 
+    if(!get_FPGA_init()){set_FPGA_init();gemm_fpga_init();}
+
     // with im2col version
     int m = l.n;
     int k = l.size*l.size*l.c;
     int n = out_h*out_w;
-    if(0){ // with FPGA Model
+    if(1){ // with FPGA Model
         float *a = l.weights;
         float *b = net.workspace;
         float *c = l.output;
