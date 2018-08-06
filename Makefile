@@ -6,7 +6,7 @@ OPENCV?=1
 OPENEXR=0
 DEBUG?=0
 FPGA?=0
-FPGA_EMU?=0
+FPGA_EMU?=1
 VIEW_TIME=1
 FOLDBN=1
 FP32=0
@@ -38,18 +38,6 @@ OPTS=-Ofast
 LDFLAGS= -lm -pthread 
 COMMON = -Iinclude/ -Isrc/
 
-ifeq ($(OPENEXR),1)
-CC=$(CXX)
-CFLAGS+= -DOPENEXR $(shell pkg-config --cflags IlmBase)
-LDFLAGS+=$(shell pkg-config --libs   IlmBase)
-endif
-
-ifeq ($(CC),$(CXX))
-CFLAGS+=-Wall -Wno-unknown-pragmas -Wfatal-errors -fPIC -fpermissive -Wno-unused-variable -Wno-write-strings
-else
-CFLAGS+=-Wall -Wno-unknown-pragmas -Wfatal-errors -fPIC -Wno-unused-variable -Wno-write-strings
-endif
-
 ifeq ($(BLAS),1)
 CFLAGS+= -DCBLAS $(shell pkg-config --cflags openblas)
 LDFLAGS+=$(shell pkg-config --libs openblas)
@@ -64,16 +52,24 @@ ifeq ($(FPGA_EMU), 1)
 FPGA_DEVICE=-march=emulator
 CFLAGS+= -DFPGA
 OBJ+=gemm_fpga.o
-CFLAGS+= $(shell aocl compile-config)
+CFLAGS+=  $(shell aocl compile-config)
 LDFLAGS+= $(shell aocl link-config)	-lacl_emulator_kernel_rt
+OPENEXR=1
 else
 ifeq ($(FPGA),1)
 FPGA_DEVICE=
 CFLAGS+= -DFPGA
 OBJ+=gemm_fpga.o
-CFLAGS+= $(shell aocl compile-config)
+CFLAGS+=  $(shell aocl compile-config)
 LDFLAGS+= $(shell aocl link-config)
+OPENEXR=1
 endif
+endif
+
+ifeq ($(OPENEXR),1)
+CC=$(CXX)
+CFLAGS+= -DOPENEXR $(shell pkg-config --cflags IlmBase)
+LDFLAGS+=$(shell pkg-config --libs   IlmBase)
 endif
 
 ifeq ($(FP32),1)
@@ -91,15 +87,17 @@ ifeq ($(VIEW_TIME),1)
 CFLAGS+= -DGET_LAYER_TIME
 endif
 
+ifeq ($(CC),$(CXX))
+CFLAGS+=-Wall -Wno-unknown-pragmas -Wfatal-errors -fPIC -fpermissive -Wno-unused-variable -Wno-write-strings
+else
+CFLAGS+=-Wall -Wno-unknown-pragmas -Wfatal-errors -fPIC -Wno-unused-variable -Wno-write-strings
+endif
+
 CFLAGS+=$(OPTS)
 
 ifeq ($(OPENCV), 1) 
 COMMON+= -DOPENCV
-#CFLAGS+= -DOPENCV -DSDL2 -DSINGLE_THREAD_SDL
 CFLAGS+= -DOPENCV -DSDL2
-#COMMON+= -Wno-unused-function -Wno-unused-result -Wno-unused-variable
-#COMMON+= -Wno-return-type -Wno-format-security -Wno-pointer-sign
-#COMMON+= -Wno-maybe-uninitialized -Wno-implicit-int
 LDFLAGS+= `pkg-config --libs opencv` 
 COMMON+= `pkg-config --cflags opencv` 
 LDFLAGS+= `pkg-config --libs sdl2` 
@@ -119,7 +117,7 @@ CFLAGS+= -DCUDNN
 LDFLAGS+= -lcudnn
 endif
 
-OBJ+=gemm.o utils.o cuda.o deconvolutional_layer.o convolutional_layer.o list.o image.o activations.o im2col.o col2im.o blas.o crop_layer.o dropout_layer.o maxpool_layer.o softmax_layer.o data.o matrix.o network.o connected_layer.o cost_layer.o parser.o option_list.o detection_layer.o route_layer.o box.o normalization_layer.o avgpool_layer.o layer.o local_layer.o shortcut_layer.o activation_layer.o rnn_layer.o gru_layer.o crnn_layer.o demo.o batchnorm_layer.o region_layer.o reorg_layer.o tree.o  lstm_layer.o netdump.o fp16.o im2row.o kn2row_conv.o data_reshape.o
+OBJ+=gemm.o utils.o cuda.o deconvolutional_layer.o convolutional_layer.o list.o image.o activations.o im2col.o col2im.o blas.o crop_layer.o dropout_layer.o maxpool_layer.o softmax_layer.o data.o matrix.o network.o connected_layer.o cost_layer.o parser.o option_list.o detection_layer.o route_layer.o box.o normalization_layer.o avgpool_layer.o layer.o local_layer.o shortcut_layer.o activation_layer.o rnn_layer.o gru_layer.o crnn_layer.o demo.o batchnorm_layer.o region_layer.o reorg_layer.o tree.o  lstm_layer.o netdump.o im2row.o kn2row_conv.o data_reshape.o
 EXECOBJA=captcha.o lsd.o super.o voxel.o art.o tag.o cifar.o go.o rnn.o rnn_vid.o compare.o segmenter.o regressor.o classifier.o coco.o dice.o yolo.o detector.o  writing.o nightmare.o swag.o darknet.o 
 ifeq ($(GPU), 1) 
 LDFLAGS+= -lstdc++ 
@@ -152,11 +150,8 @@ $(OBJDIR)%.o: %.c $(DEPS)
 $(OBJDIR)%.o: %.cu $(DEPS)
 	$(NVCC) $(ARCH) $(COMMON) --compiler-options "$(CFLAGS)" -c $< -o $@
 
-$(OBJDIR)fp16.o:src/fp16.cpp
-	$(CXX) -c -o $@ $^ -I /usr/local/include $(CFLAGS)
-
 $(AOCX):$(GEMM1_CL)
-	aoc $(FPGA_DEVICE) -g -v -report $^ -o $(@)
+	aoc $(FPGA_DEVICE) -fpc -fp-relaxed -v -report $^ -o $(@)
 
 obj:
 	mkdir -p obj
