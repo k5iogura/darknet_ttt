@@ -448,7 +448,7 @@ void gemm_cpu(int TA, int TB, int M, int N, int K, float ALPHA,
     }
     if(!TA && !TB){
 #ifdef FPGA
-        if(!FPGA_init){FPGA_init=1;gemm_fpga_init("gemm1_emu.aocx");}
+        if(!FPGA_init){FPGA_init=1;gemm_fpga_init();}
         gemm_nn_fpga(M, N, K, ALPHA, A, lda, B, ldb, C, ldc);
 #else
         gemm_nn(M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
@@ -508,7 +508,7 @@ void gemm2(int TA, int TB, int TC,
     else
         for(i = 0; i < M; ++i) for(j = 0; j < N; ++j) C[i + ldc*j] *= BETA;
 #ifdef FPGA
-    if(!FPGA_init){FPGA_init=1;gemm_fpga_init("gemm1_emu.aocx");}
+    if(!FPGA_init){FPGA_init=1;gemm_fpga_init();}
 #endif
                                  // A B C  R:Row-Major C:Col-Major
     if(!TA && !TB && !TC){       // R R R   0 0 0
@@ -549,7 +549,7 @@ void gemm_hf(int TA, int TB, int TC,
     else
         for(i = 0; i < M; ++i) for(j = 0; j < N; ++j) C[i + ldc*j] *= BETA;
 #ifdef FPGA
-    if(!FPGA_init){FPGA_init=1;gemm_fpga_init("gemm1_emu.aocx");}
+    if(!FPGA_init){FPGA_init=1;gemm_fpga_init();}
 #endif
                                  // A B C  R:Row-Major C:Col-Major
     if(!TA && !TB && !TC){       // R R R   0 0 0

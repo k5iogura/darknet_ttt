@@ -609,7 +609,7 @@ void forward_convolutional_layer_hf(convolutional_layer l, network net)
     int out_w = l.out_w;
 
 #ifdef FPGA
-    if(!get_FPGA_init()){set_FPGA_init();gemm_fpga_init("gemm1_emu.aocx");}
+    if(!get_FPGA_init()){set_FPGA_init();gemm_fpga_init();}
 #endif
     double time=what_time_is_it_now();
 

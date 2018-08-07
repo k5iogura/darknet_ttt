@@ -35,11 +35,15 @@ static cl_kernel kernels[MAX_ENV];
 #define GEMMfW 1
 //static cl_platform_id platform_id = NULL;
 
-int gemm_fpga_init (char * aocx) {
+int gemm_fpga_init () {
+    char *emulator_flag1 = getenv("CL_CONTEXT_EMULATOR_DEVICE_INTELFPGA");
+    char *emulator_flag2 = getenv("CL_CONTEXT_EMULATOR_DEVICE_ALTERA");
+    char *aocx="gemm_fpga.aocx";
+    if(emulator_flag1 && !strncmp(emulator_flag1, "1", 1)){aocx = "gemm_emu.aocx",printf("emulator_mode1:%s\n",aocx);}
+    if(emulator_flag2 && !strncmp(emulator_flag2, "1", 1)){aocx = "gemm_emu.aocx",printf("emulator_mode2:%s\n",aocx);}
     const char *k_name[2]={"gemm_nn9W","gemm_nnfW"};
     find_CnKQ(
         "Intel(R) FPGA SDK for OpenCL(TM)",
-        //"gemm1.aocx",
         aocx,
         2,
         k_name,
@@ -108,7 +112,7 @@ void gemm_nn_fpga_half(int M, int N, int K, half ALPHA,
     ret = clSetKernelArg (kernel, 0, sizeof (cl_int),  &M);               checkErr(ret,"clSetKernelArg-0");
     ret = clSetKernelArg (kernel, 1, sizeof (cl_int),  &N);               checkErr(ret,"clSetKernelArg-1");
     ret = clSetKernelArg (kernel, 2, sizeof (cl_int),  &K);               checkErr(ret,"clSetKernelArg-2");
-    ret = clSetKernelArg (kernel, 3, sizeof (cl_half),&ALPHA);           checkErr(ret,"clSetKernelArg-3");
+    ret = clSetKernelArg (kernel, 3, sizeof (cl_half),&ALPHA);            checkErr(ret,"clSetKernelArg-3");
     ret = clSetKernelArg (kernel, 4, sizeof (cl_mem), (void *) &memobjA); checkErr(ret,"clSetKernelArg-4");
     ret = clSetKernelArg (kernel, 5, sizeof (cl_int),  &K);               checkErr(ret,"clSetKernelArg-5");
     ret = clSetKernelArg (kernel, 6, sizeof (cl_mem), (void *) &memobjB); checkErr(ret,"clSetKernelArg-6");

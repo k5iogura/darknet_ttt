@@ -2,7 +2,7 @@
 // GEMM on FPGA 
 
 //Initialize FPGA Platform until to get commandQueue.
-extern int gemm_fpga_init (char *aocx) ;
+extern int gemm_fpga_init () ;
 
 //GEMM calcuration on FPGA.
 extern void gemm_nn_fpga(int M, int N, int K, float ALPHA, 
