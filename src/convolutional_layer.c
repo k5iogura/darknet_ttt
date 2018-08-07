@@ -645,7 +645,7 @@ void forward_convolutional_layer_hf(convolutional_layer l, network net)
         gemm_hf(0, 0, 0, m, n, k, 1, a_hf, k, b_hf, n, 1, c_hf, n);    //OK FPGA gemm1_naive_half.aocx
         half2float(m*n, c_hf, 1, c, 1);
 #else
-        error("Need OPENEXR Define");
+        error("Need OPENEXR Define-0");
 #endif
     }
 
@@ -653,7 +653,7 @@ void forward_convolutional_layer_hf(convolutional_layer l, network net)
     m = out_h*out_w;
     k = l.size*l.size*l.c;
     n = l.n;
-    if(1){ // with FPGA Model
+    if(0){ // with FPGA Model for gemm_ntt_float.cl
         float *a = net.workspace;
         float *b = l.weights;
         float *c = l.output;
@@ -670,6 +670,32 @@ void forward_convolutional_layer_hf(convolutional_layer l, network net)
         //gemm2(1,1,1, m, n, k, 1, a, m, b, k, 1, c, m);     //OK for instead of FPGA Model
         gemm2(0,1,1, m, n, k, 1, A, k, b, k, 1, c, m);     //OK for instead of FPGA Model
         free(A);
+    }else if(1){ // with FPGA Model for gemm_ntt.cl
+#ifdef OPENEXR
+        float *a = net.workspace;
+        float *b = l.weights;
+        float *c = l.output;
+        float *A = (float*)malloc(sizeof(float)*(l.out_w*l.out_h)*(l.size*l.size*l.c));
+        half *a_hf = net.workspace_hf;
+        half *b_hf = l.weights_hf;
+        half *c_hf = l.output_hf;
+        TensorDim in_dim  ={ 1, l.c, l.h, l.w };
+        TensorDim filt_dim={ l.out_c, l.c, l.size, l.size };
+        CppConvnetIm2Row(a, net.input, out_w, out_h, k, in_dim, filt_dim, l.stride, l.pad);
+        //col2row_cblas(l.c*l.size*l.size, out_w*out_h, a, A);
+        col2row_major(l.c*l.size*l.size, out_w*out_h, a, A);
+        //col2row_major(k,m,b,B);
+        //row2col_major(l.c*l.size*l.size, out_w*out_h, A, a);
+        printf("%9.6f ", what_time_is_it_now()-time);
+
+        //gemm2(1,1,1, m, n, k, 1, a, m, b, k, 1, c, m);     //OK for instead of FPGA Model
+        float2half(m*k, A, 1, a_hf, 1);
+        gemm_hf(0,1,1, m, n, k, 1, a_hf, k, b_hf, k, 1, c_hf, m);     //OK for instead of FPGA Model
+        half2float(m*n, c_hf, 1, c, 1);
+        free(A);
+#else
+        error("Need OPENEXR Define-1");
+#endif
     }
 
     if(!l.batch_normalize){
