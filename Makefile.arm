@@ -85,7 +85,7 @@ ifeq ($(FPGA),1)
 CFLAGS+= -DFPGA $(shell aocl compile-config)
 LDFLAGS+= $(shell aocl link-config)	-lacl_emulator_kernel_rt
 OBJ+=gemm_fpga.o
-#OPENEXR=1
+OPENEXR=1
 endif
 
 ifeq ($(OPENEXR),1)
