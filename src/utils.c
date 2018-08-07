@@ -733,3 +733,17 @@ float **one_hot_encode(float *a, int n, int k)
     return t;
 }
 
+#ifdef OPENEXR
+void float2half(int N, float *X, int INCX, half *Y, int INCY){
+    register int i;
+    for(i=0;i<N;i++) Y[i*INCY] = X[i*INCX];
+}
+#endif
+
+#ifdef OPENEXR
+void half2float(int N, half *X, int INCX, float *Y, int INCY){
+    register int i;
+    for(i=0;i<N;i++) Y[i*INCY] = X[i*INCX];
+}
+#endif
+

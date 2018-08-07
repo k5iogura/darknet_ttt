@@ -210,23 +210,16 @@ void forward_network(network net)
     for(i = 0; i < net.n; ++i){
         layer l = net.layers[i];
         if(l.type != CONVOLUTIONAL) continue;
-        for(j = 0;j < l.c*l.n*l.size*l.size; j++) l.weights_hf[j] = l.weights[j];
-        for(j = 0;j < l.n; j++)                   l.biases_hf[j] = l.biases[j];
-        for(j = 0;j < l.outputs; j++)                   l.biased_output_hf[j] = l.biased_output[j];
-        for(j = 0;j < l.outputs; j++)             l.output_hf[j] = l.output[j];
-        if(l.batch_normalize){
-            for(j = 0;j < l.n; j++)               l.scales_hf[j] = l.scales[j];
-            for(j = 0;j < l.n; j++)               l.rolling_mean_hf[j] = l.rolling_mean[j];
-            for(j = 0;j < l.n; j++)               l.rolling_variance_hf[j] = l.variance[j];
-        }
+        float2half(l.c*l.n*l.size*l.size, l.weights,       1, l.weights_hf,       1);
+        float2half(l.batch*l.outputs,     l.biased_output, 1, l.biased_output_hf, 1);
     }
 #endif
     for(i = 0; i < net.n; ++i){
+        net.index = i;
+        layer l = net.layers[i];
 #ifdef GET_LAYER_TIME
         time=what_time_is_it_now();
 #endif
-        net.index = i;
-        layer l = net.layers[i];
         if(l.delta){
             fill_cpu(l.outputs * l.batch, 0, l.delta, 1);
         }
@@ -238,9 +231,9 @@ void forward_network(network net)
 #ifdef GET_LAYER_TIME
         total+=what_time_is_it_now()-time;
         if(l.type==CONVOLUTIONAL)
-            printf("layer-CONV %f/%f sec.\n", i, what_time_is_it_now()-time,total);
+            printf("%9.6f %12.6f %04d %03d\n", what_time_is_it_now()-time,total,l.type,i);
         else
-            printf("layer-%4d %f/%f sec.\n", i, what_time_is_it_now()-time,total);
+            printf("%9.6f %9.6f %12.6f %04d %03d\n", 0.0, what_time_is_it_now()-time,total,l.type,i);
 #endif
     }
     calc_network_cost(net);

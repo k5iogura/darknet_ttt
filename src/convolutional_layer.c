@@ -604,15 +604,17 @@ void col2row_major(int sz_col, int sz_row, float *colm_src, float *rowm_dst){
 
 void forward_convolutional_layer_hf(convolutional_layer l, network net)
 {
+    int i;
     int out_h = l.out_h;
     int out_w = l.out_w;
     double time=what_time_is_it_now();
 
     //copy_cpu(l.outputs*l.batch, l.biased_output, 1, l.output, 1);
     cblas_scopy(l.outputs*l.batch, l.biased_output, 1, l.output, 1);
+    for(i=0;i<l.outputs*l.batch;i++) l.output_hf[i]=l.biased_output[i];
 
 #ifdef FPGA
-    if(!get_FPGA_init()){set_FPGA_init();gemm_fpga_init();}
+    if(!get_FPGA_init()){set_FPGA_init();gemm_fpga_init("gemm1_emu.aocx");}
 #endif
 
     // with im2col version
@@ -625,7 +627,7 @@ void forward_convolutional_layer_hf(convolutional_layer l, network net)
         float *c = l.output;
 
         im2col_cpu(net.input, l.c, l.h, l.w, l.size, l.stride, l.pad, b);
-        printf(" WOG=%f ", what_time_is_it_now()-time);
+        printf("%9.6f ", what_time_is_it_now()-time);
         gemm2(0, 0, 0, m, n, k, 1, a, k, b, k, 1, c, n);    //OK for instead of FPGA Model
         //im2col_cpu_col_major(net.input, l.c, l.h, l.w, l.size, l.stride, l.pad, b);
         //printf(" WOG=%f ", what_time_is_it_now()-time);

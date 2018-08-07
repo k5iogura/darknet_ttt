@@ -48,5 +48,9 @@ float sec(clock_t clocks);
 void print_statistics(float *a, int n);
 
 void prbin(float w,unsigned int v); //add
+#ifdef OPENEXR
+void half2float(int N, half *X, int INCX, float *Y, int INCY); //add
+void float2half(int N, float *X, int INCX, half *Y, int INCY); //add
+#endif
 #endif
 

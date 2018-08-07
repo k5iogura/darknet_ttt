@@ -761,6 +761,10 @@ network parse_network_cfg(char *filename)
         }
 #else
         net.workspace = calloc(1, workspace_size);
+#ifdef OPENEXR
+        net.workspace_hf = (half*)calloc(1, workspace_size);                  //add
+        net.input_hf     = (half*)calloc(net.inputs*net.batch, sizeof(half)); //add
+#endif
 #endif
     }
     return net;

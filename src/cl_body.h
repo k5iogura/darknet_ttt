@@ -92,6 +92,7 @@ cl_device_id ocl_init (const char *target_name) {
         }
         if(target_name && !strcmp(platform_name, target_name) && ret_num_devices>0) target_device = device_id[0];
     }
+    printf("%9s %9s %12s %4s %3s\n","Setup","sGEMM","sub-Total","TYPE","Idx");  //for estimation of elapse time
     return target_device;
 }
 
@@ -148,8 +149,7 @@ cl_program cProgram(const char*fileName, cl_context context, cl_device_id device
     size_t info_size;
     for(i=0;i<(int)n_kernels;i++){
         (void)clGetKernelInfo(kernels[i],CL_KERNEL_FUNCTION_NAME,64,name,&info_size);
-        printf("In Program kernel[%d] name = %s\n",i,name);
-    //    clReleaseKernel(kernels[i]);
+        //printf("In Program kernel[%d] name = %s\n",i,name);
     }
     return program;
 }
