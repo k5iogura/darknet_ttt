@@ -154,9 +154,9 @@ void gemm_ntt_fpga_half(int M, int N, int K, float ALPHA,
     ret = clSetKernelArg (kernel, 4, sizeof (cl_mem), (void *) &memobjA); checkErr(ret,"clSetKernelArg-4");
     ret = clSetKernelArg (kernel, 5, sizeof (cl_int),  &K);               checkErr(ret,"clSetKernelArg-5");
     ret = clSetKernelArg (kernel, 6, sizeof (cl_mem), (void *) &memobjB); checkErr(ret,"clSetKernelArg-6");
-    ret = clSetKernelArg (kernel, 7, sizeof (cl_int),  &N);               checkErr(ret,"clSetKernelArg-7");
+    ret = clSetKernelArg (kernel, 7, sizeof (cl_int),  &K);               checkErr(ret,"clSetKernelArg-7");
     ret = clSetKernelArg (kernel, 8, sizeof (cl_mem), (void *) &memobjC); checkErr(ret,"clSetKernelArg-8");
-    ret = clSetKernelArg (kernel, 9, sizeof (cl_int),  &N);               checkErr(ret,"clSetKernelArg-9");
+    ret = clSetKernelArg (kernel, 9, sizeof (cl_int),  &M);               checkErr(ret,"clSetKernelArg-9");
 
 /* Execute OpenCL Kernel */
     ret = clEnqueueTask (command_queue, kernel, 0, NULL, NULL);   checkErr(ret,"clEnqueueTask");
