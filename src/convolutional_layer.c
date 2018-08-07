@@ -607,31 +607,46 @@ void forward_convolutional_layer_hf(convolutional_layer l, network net)
     int i;
     int out_h = l.out_h;
     int out_w = l.out_w;
-    double time=what_time_is_it_now();
-
-    //copy_cpu(l.outputs*l.batch, l.biased_output, 1, l.output, 1);
-    cblas_scopy(l.outputs*l.batch, l.biased_output, 1, l.output, 1);
-    for(i=0;i<l.outputs*l.batch;i++) l.output_hf[i]=l.biased_output[i];
 
 #ifdef FPGA
     if(!get_FPGA_init()){set_FPGA_init();gemm_fpga_init("gemm1_emu.aocx");}
 #endif
+    double time=what_time_is_it_now();
 
-    // with im2col version
+    //copy_cpu(l.outputs*l.batch, l.biased_output, 1, l.output, 1);
+    cblas_scopy(l.outputs*l.batch, l.biased_output, 1, l.output, 1);
+#ifdef OPENEXR
+    for(i=0;i<l.outputs*l.batch;i++) l.output_hf[i]=l.biased_output[i];
+#endif
+
+    // with im2col version for gemm_nn
     int m = l.n;
     int k = l.size*l.size*l.c;
     int n = out_h*out_w;
-    if(1){ // with FPGA Model
+    if(0){
         float *a = l.weights;
         float *b = net.workspace;
         float *c = l.output;
 
         im2col_cpu(net.input, l.c, l.h, l.w, l.size, l.stride, l.pad, b);
         printf("%9.6f ", what_time_is_it_now()-time);
-        gemm2(0, 0, 0, m, n, k, 1, a, k, b, k, 1, c, n);    //OK for instead of FPGA Model
-        //im2col_cpu_col_major(net.input, l.c, l.h, l.w, l.size, l.stride, l.pad, b);
-        //printf(" WOG=%f ", what_time_is_it_now()-time);
-        //gemm2(0, 1, 0, m, n, k, 1, a, k, b, k, 1, c, n);    //OK for instead of FPGA Model
+        gemm2(0, 0, 0, m, n, k, 1, a, k, b, n, 1, c, n);    //OK FPGA gemm1_naive.aocx
+    }else if(1){
+#ifdef OPENEXR
+        float *b = net.workspace;
+        float *c = l.output;
+        half *a_hf = l.weights_hf;
+        half *b_hf = net.workspace_hf;
+        half *c_hf = l.output_hf;
+
+        im2col_cpu(net.input, l.c, l.h, l.w, l.size, l.stride, l.pad, b);
+        float2half(k*n, b, 1, b_hf, 1);
+        printf("%9.6f ", what_time_is_it_now()-time);
+        gemm_hf(0, 0, 0, m, n, k, 1, a_hf, k, b_hf, n, 1, c_hf, n);    //?? FPGA gemm1_naive_half.aocx
+        half2float(m*n, c_hf, 1, c, 1);
+#else
+        error("Need OPENEXR Define");
+#endif
     }
 
     // with im2row version

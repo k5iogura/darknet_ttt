@@ -23,6 +23,14 @@ void gemm2(int TA, int TB, int TC, int M, int N, int K, float ALPHA,
                     float BETA,
                     float *C, int ldc);
 
+#ifdef OPENEXR
+void gemm_hf(int TA, int TB, int TC, int M, int N, int K, float ALPHA, 
+                    half *A, int lda, 
+                    half *B, int ldb,
+                    float BETA,
+                    half *C, int ldc);
+#endif
+
 void gemm_nn_binary( int M, int N, int K,
                     float *A, int lda, 
                     float *B, int ldb,

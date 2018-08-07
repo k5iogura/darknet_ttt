@@ -80,11 +80,11 @@ void gemm(int TA, int TB, int M, int N, int K, float ALPHA,
 }
 
 //#define gemm_nn gemm_nn_BcolM   // need using im2col_cpu2
-#define gemm_nn gemm_nn_naive
+//#define gemm_nn gemm_nn_naive
 //#define gemm_nn gemm_nn_fp
 //#define gemm_nn gemm_nn_hf
 //#define gemm_nn gemm_nn_hf
-//#define gemm_nn gemm_nn_cblas
+#define gemm_nn gemm_nn_cblas
 //#define gemm_nn gemm_nn_hetero
 //#define gemm_nt gemm_nt_hf
 #define gemm_nt gemm_nt_naive
@@ -534,6 +534,54 @@ void gemm2(int TA, int TB, int TC,
     else
         error("not support TA,TB,TC");
 }
+
+#ifdef OPENEXR
+void gemm_hf(int TA, int TB, int TC,
+        int M, int N, int K, float ALPHA, 
+        half *A, int lda, 
+        half *B, int ldb,
+        float BETA,
+        half *C, int ldc)
+{
+    int i, j;
+    if(!TC)
+        for(i = 0; i < M; ++i) for(j = 0; j < N; ++j) C[i*ldc + j] *= BETA;
+    else
+        for(i = 0; i < M; ++i) for(j = 0; j < N; ++j) C[i + ldc*j] *= BETA;
+#ifdef FPGA
+    if(!FPGA_init){FPGA_init=1;gemm_fpga_init("gemm1_emu.aocx");}
+#endif
+                                 // A B C  R:Row-Major C:Col-Major
+    if(!TA && !TB && !TC){       // R R R   0 0 0
+#ifdef FPGA
+        half Alpha = ALPHA;
+        gemm_nn_fpga_half(M, N, K, Alpha, A, lda, B, ldb, C, ldc);
+#else
+//        gemm_nn(M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
+#endif
+    }else if( TA && !TB && !TC)  // C R R   1 0 0
+//        gemm_tn (M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
+        i=0;
+    else if(!TA &&  TB &&  TC)   // R C C   0 1 1 for FPGA with im2row and col2row Model
+#ifdef FPGA
+//        gemm_ntt_fpga(M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
+#else
+//        gemm_ntt(M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
+#endif
+        i=0;
+    else if(!TA &&  TB && !TC)   // R C R   0 1 0 for FPGA with im2col_col_major Model
+//        gemm_ntn(M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
+        i=0;
+    else if( TA &&  TB &&  TC)   // C C C   1 1 1
+//        gemm_ttt(M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
+        i=0;
+    else if( TA &&  TB && !TC)   // C C R   1 1 0
+//        gemm_ttn(M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
+        i=0;
+    else
+        error("not support TA,TB,TC");
+}
+#endif
 
 #ifdef GPU
 

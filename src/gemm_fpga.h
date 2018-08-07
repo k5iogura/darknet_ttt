@@ -25,4 +25,10 @@ extern void gemm_nn(int M, int N, int K, float ALPHA,
 //Release FPGA Platform.
 extern void gemm_fpga_finalize();
 
+#ifdef OPENEXR
+void gemm_nn_fpga_half(int M, int N, int K, half ALPHA, 
+                    half *A, int lda, 
+                    half *B, int ldb,
+                    half *C, int ldc);
+#endif
 #endif

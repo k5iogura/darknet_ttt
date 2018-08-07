@@ -18,6 +18,10 @@
 #include "cl_body.h"
 #endif
 
+#ifdef OPENEXR
+#include <OpenEXR/half.h>
+#endif
+
 //static cl_device_id device_id = NULL;
 static cl_context context = NULL;
 static cl_command_queue command_queue;
@@ -81,6 +85,46 @@ void gemm_nn_fpga(int M, int N, int K, float ALPHA,
     ret = clReleaseMemObject (memobjC);
     return;
 }
+
+#ifdef OPENEXR
+void gemm_nn_fpga_half(int M, int N, int K, half ALPHA, 
+        half *A, int lda, 
+        half *B, int ldb,
+        half *C, int ldc) {
+    cl_int ret=0;
+    memobjA = clCreateBuffer (context, CL_MEM_READ_ONLY|CL_MEM_USE_HOST_PTR,
+					  M * K * sizeof (cl_half), A, &ret);  checkErr(ret,"clCreateBuffer-0");
+    memobjB = clCreateBuffer (context, CL_MEM_READ_ONLY|CL_MEM_USE_HOST_PTR,
+					  K * N * sizeof (cl_half), B, &ret);  checkErr(ret,"clCreateBuffer-1");
+    memobjC = clCreateBuffer (context, CL_MEM_READ_WRITE|CL_MEM_USE_HOST_PTR,
+					  M * N * sizeof (cl_half), C, &ret);  checkErr(ret,"clCreateBuffer-2");
+
+    if(!(K%27))
+        kernel = kernels[GEMM9W];
+    else
+        kernel = kernels[GEMMfW];
+
+/* Set OpenCL Kernel Parameters */
+    ret = clSetKernelArg (kernel, 0, sizeof (cl_int),  &M);               checkErr(ret,"clSetKernelArg-0");
+    ret = clSetKernelArg (kernel, 1, sizeof (cl_int),  &N);               checkErr(ret,"clSetKernelArg-1");
+    ret = clSetKernelArg (kernel, 2, sizeof (cl_int),  &K);               checkErr(ret,"clSetKernelArg-2");
+    ret = clSetKernelArg (kernel, 3, sizeof (cl_half),&ALPHA);           checkErr(ret,"clSetKernelArg-3");
+    ret = clSetKernelArg (kernel, 4, sizeof (cl_mem), (void *) &memobjA); checkErr(ret,"clSetKernelArg-4");
+    ret = clSetKernelArg (kernel, 5, sizeof (cl_int),  &K);               checkErr(ret,"clSetKernelArg-5");
+    ret = clSetKernelArg (kernel, 6, sizeof (cl_mem), (void *) &memobjB); checkErr(ret,"clSetKernelArg-6");
+    ret = clSetKernelArg (kernel, 7, sizeof (cl_int),  &N);               checkErr(ret,"clSetKernelArg-7");
+    ret = clSetKernelArg (kernel, 8, sizeof (cl_mem), (void *) &memobjC); checkErr(ret,"clSetKernelArg-8");
+    ret = clSetKernelArg (kernel, 9, sizeof (cl_int),  &N);               checkErr(ret,"clSetKernelArg-9");
+
+/* Execute OpenCL Kernel */
+    ret = clEnqueueTask (command_queue, kernel, 0, NULL, NULL);   checkErr(ret,"clEnqueueTask");
+    clFinish(command_queue);
+    ret = clReleaseMemObject (memobjA);
+    ret = clReleaseMemObject (memobjB);
+    ret = clReleaseMemObject (memobjC);
+    return;
+}
+#endif
 
 void gemm_ntt_fpga(int M, int N, int K, float ALPHA, 
         float *A, int lda, 
