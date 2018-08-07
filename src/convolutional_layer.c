@@ -631,7 +631,7 @@ void forward_convolutional_layer_hf(convolutional_layer l, network net)
         im2col_cpu(net.input, l.c, l.h, l.w, l.size, l.stride, l.pad, b);
         printf("%9.6f ", what_time_is_it_now()-time);
         gemm2(0, 0, 0, m, n, k, 1, a, k, b, n, 1, c, n);    //OK FPGA gemm1_naive.aocx
-    }else if(1){
+    }else if(0){
 #ifdef OPENEXR
         float *b = net.workspace;
         float *c = l.output;
@@ -642,32 +642,32 @@ void forward_convolutional_layer_hf(convolutional_layer l, network net)
         im2col_cpu(net.input, l.c, l.h, l.w, l.size, l.stride, l.pad, b);
         float2half(k*n, b, 1, b_hf, 1);
         printf("%9.6f ", what_time_is_it_now()-time);
-        gemm_hf(0, 0, 0, m, n, k, 1, a_hf, k, b_hf, n, 1, c_hf, n);    //?? FPGA gemm1_naive_half.aocx
+        gemm_hf(0, 0, 0, m, n, k, 1, a_hf, k, b_hf, n, 1, c_hf, n);    //OK FPGA gemm1_naive_half.aocx
         half2float(m*n, c_hf, 1, c, 1);
 #else
         error("Need OPENEXR Define");
 #endif
     }
 
-    // with im2row version
+    // with im2row version for gemm_ntt
     m = out_h*out_w;
     k = l.size*l.size*l.c;
     n = l.n;
-    if(0){ // with FPGA Model
+    if(1){ // with FPGA Model
         float *a = net.workspace;
         float *b = l.weights;
         float *c = l.output;
         float *A = (float*)malloc(sizeof(float)*(l.out_w*l.out_h)*(l.size*l.size*l.c));
-        float *B = (float*)malloc(sizeof(float)*k*m);
         TensorDim in_dim  ={ 1, l.c, l.h, l.w };
         TensorDim filt_dim={ l.out_c, l.c, l.size, l.size };
         CppConvnetIm2Row(a, net.input, out_w, out_h, k, in_dim, filt_dim, l.stride, l.pad);
-        double time=what_time_is_it_now();
         //col2row_cblas(l.c*l.size*l.size, out_w*out_h, a, A);
         col2row_major(l.c*l.size*l.size, out_w*out_h, a, A);
         //col2row_major(k,m,b,B);
         //row2col_major(l.c*l.size*l.size, out_w*out_h, A, a);
-        printf(" WOG=%f ", what_time_is_it_now()-time);
+        printf("%9.6f ", what_time_is_it_now()-time);
+
+        //gemm2(1,1,1, m, n, k, 1, a, m, b, k, 1, c, m);     //OK for instead of FPGA Model
         gemm2(0,1,1, m, n, k, 1, A, k, b, k, 1, c, m);     //OK for instead of FPGA Model
         free(A);
     }

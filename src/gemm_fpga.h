@@ -30,5 +30,9 @@ void gemm_nn_fpga_half(int M, int N, int K, half ALPHA,
                     half *A, int lda, 
                     half *B, int ldb,
                     half *C, int ldc);
+void gemm_ntt_fpga_half(int M, int N, int K, float ALPHA, 
+                    half *A, int lda, 
+                    half *B, int ldb,
+                    half *C, int ldc);
 #endif
 #endif

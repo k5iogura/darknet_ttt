@@ -523,7 +523,7 @@ void gemm2(int TA, int TB, int TC,
 #ifdef FPGA
         gemm_ntt_fpga(M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
 #else
-        gemm_ntt(M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
+        gemm_ntt     (M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
 #endif
     else if(!TA &&  TB && !TC)   // R C R   0 1 0 for FPGA with im2col_col_major Model
         gemm_ntn(M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
@@ -564,11 +564,10 @@ void gemm_hf(int TA, int TB, int TC,
         i=0;
     else if(!TA &&  TB &&  TC)   // R C C   0 1 1 for FPGA with im2row and col2row Model
 #ifdef FPGA
-//        gemm_ntt_fpga(M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
+        gemm_ntt_fpga_half(M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
 #else
 //        gemm_ntt(M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
 #endif
-        i=0;
     else if(!TA &&  TB && !TC)   // R C R   0 1 0 for FPGA with im2col_col_major Model
 //        gemm_ntn(M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
         i=0;
