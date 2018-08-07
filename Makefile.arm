@@ -2,9 +2,10 @@
 GPU=0
 CUDNN=0
 OPENCV?=0
+OPENEXR=1
 OPENMP=0
 DEBUG?=0
-FPGA?=0
+FPGA?=1
 FOLDBN=1
 CBLAS=1
 VIEW_TIME=1
@@ -33,11 +34,6 @@ ARFLAGS=rcs
 OPTS=-Ofast
 LDFLAGS= -lm -pthread 
 COMMON= -Iinclude/ -Isrc/
-ifeq ($(CC),arm-linux-gnueabihf-gcc)
-CFLAGS=-Wall -Wno-unknown-pragmas -Wfatal-errors -Wno-format -fPIC
-else
-CFLAGS=-Wall -Wno-unknown-pragmas -Wfatal-errors -Wno-format -fPIC -fpermissive -Wno-write-strings
-endif
 
 ifeq ($(OPENMP), 1) 
 CFLAGS+= -fopenmp
@@ -89,6 +85,12 @@ ifeq ($(FPGA),1)
 CFLAGS+= -DFPGA $(shell aocl compile-config)
 LDFLAGS+= $(shell aocl link-config)	-lacl_emulator_kernel_rt
 OBJ+=gemm_fpga.o
+OPENEXR=1
+endif
+
+ifeq ($(OPENEXR),1)
+CFLAGS+= -DOPENEXR
+CC = $(CX)
 endif
 
 ifeq ($(CBLAS),1)
@@ -104,6 +106,12 @@ ifeq ($(GPU), 1)
 COMMON+= -DGPU -I/usr/local/cuda/include/
 CFLAGS+= -DGPU
 LDFLAGS+= -L/usr/local/cuda/lib64 -lcuda -lcudart -lcublas -lcurand
+endif
+
+ifeq ($(CC),$(CX))
+CFLAGS+=-Wall -Wno-unknown-pragmas -Wfatal-errors -Wno-format -fPIC -fpermissive -Wno-write-strings
+else
+CFLAGS+=-Wall -Wno-unknown-pragmas -Wfatal-errors -Wno-format -fPIC
 endif
 
 ifeq ($(CUDNN), 1) 
