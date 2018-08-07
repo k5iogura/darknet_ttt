@@ -1,5 +1,4 @@
 #pragma OPENCL EXTENSION cl_khr_fp16 : enable
-#define half float
 #define vload_half3 vload3
 #define vload_half16 vload16
 float sum16(float16 a){
@@ -10,9 +9,9 @@ float sum16(float16 a){
     a.sc + a.sd + a.se + a.sf ;
 }
 kernel void gemm_nn9W (const int M, const int N, const int K, const float ALPHA,
-		 global half *restrict A, const int lda,
-		 global half *restrict B, const int ldb,
-		 global half *restrict C, const int ldc
+		 global float *restrict A, const int lda,
+		 global float *restrict B, const int ldb,
+		 global float *restrict C, const int ldc
 		)
 {
   int i, j, k;
@@ -21,7 +20,7 @@ kernel void gemm_nn9W (const int M, const int N, const int K, const float ALPHA,
   for (i = 0; i < M; ++i) {
     for (j = 0; j < N; ++j) {
       float Cn;
-      for (k = 0, Cn = C[ i*ldc + j ];k < wK; k+=3) {
+      for (k = 0, Cn = C[ i + ldc*j ];k < wK; k+=3) {
         float3 Ax1= vload_half3(( i*wlda + k + 0 ), A);
         float3 Ax2= vload_half3(( i*wlda + k + 1 ), A);
         float3 Ax3= vload_half3(( i*wlda + k + 2 ), A);
@@ -36,9 +35,9 @@ kernel void gemm_nn9W (const int M, const int N, const int K, const float ALPHA,
 }
 
 kernel void gemm_nnfW (const int M, const int N, const int K, const float ALPHA,
-		 global half *restrict A, const int lda,
-		 global half *restrict B, const int ldb,
-		 global half *restrict C, const int ldc
+		 global float *restrict A, const int lda,
+		 global float *restrict B, const int ldb,
+		 global float *restrict C, const int ldc
 		)
 {
   int i, j, k;
@@ -51,7 +50,7 @@ kernel void gemm_nnfW (const int M, const int N, const int K, const float ALPHA,
     }
     for (j = 0; j < N; ++j) {
       float Cn;
-      for (k = 0, Cn = C[ i*ldc + j ];k < wK; ++k) {
+      for (k = 0, Cn = C[ i + ldc*j ];k < wK; ++k) {
         float16 Ax1= ABUF[ k ];
         float16 Bx1= vload_half16(( j*wlda + k + 0 ), B);
         float16 Cx1= Bx1 * Ax1;
