@@ -670,7 +670,7 @@ void forward_convolutional_layer_hf(convolutional_layer l, network net)
         //gemm2(1,1,1, m, n, k, 1, a, m, b, k, 1, c, m);     //OK for instead of FPGA Model
         gemm2(0,1,1, m, n, k, 1, A, k, b, k, 1, c, m);     //OK for instead of FPGA Model
         free(A);
-    }else if(1){ // with FPGA Model for gemm_ntt.cl
+    }else if(1){ // with FPGA Model for gemm_ntt.cl and gemm_ntt_jik.cl
 #ifdef OPENEXR
         float *a = net.workspace;
         float *b = l.weights;
@@ -688,7 +688,6 @@ void forward_convolutional_layer_hf(convolutional_layer l, network net)
         //row2col_major(l.c*l.size*l.size, out_w*out_h, A, a);
         printf("%9.6f ", what_time_is_it_now()-time);
 
-        //gemm2(1,1,1, m, n, k, 1, a, m, b, k, 1, c, m);     //OK for instead of FPGA Model
         float2half(m*k, A, 1, a_hf, 1);
         gemm_hf(0,1,1, m, n, k, 1, a_hf, k, b_hf, k, 1, c_hf, m);     //OK for instead of FPGA Model
         half2float(m*n, c_hf, 1, c, 1);
