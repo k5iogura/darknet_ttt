@@ -554,8 +554,7 @@ void gemm_hf(int TA, int TB, int TC,
                                  // A B C  R:Row-Major C:Col-Major
     if(!TA && !TB && !TC){       // R R R   0 0 0
 #ifdef FPGA
-        half Alpha = ALPHA;
-        gemm_nn_fpga_half(M, N, K, Alpha, A, lda, B, ldb, C, ldc);
+        gemm_nn_fpga_half(M, N, K, ALPHA, A, lda, B, ldb, C, ldc);
 #else
 //        gemm_nn(M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
 #endif
