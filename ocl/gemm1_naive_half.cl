@@ -1,9 +1,8 @@
 #pragma OPENCL EXTENSION cl_khr_fp16 : enable
-#define float half
 kernel void gemm_nn9W (const int M, const int N, const int K, float ALPHA,
-		 global float *restrict A, const int lda,
-		 global float *restrict B, const int ldb,
-		 global float *restrict C, const int ldc
+		 global half *restrict A, const int lda,
+		 global half *restrict B, const int ldb,
+		 global half *restrict C, const int ldc
 		)
 {
   int i, j, k, m;
@@ -18,9 +17,9 @@ kernel void gemm_nn9W (const int M, const int N, const int K, float ALPHA,
   }
 }
 kernel void gemm_nnfW (const int M, const int N, const int K, float ALPHA,
-		 global float *restrict A, const int lda,
-		 global float *restrict B, const int ldb,
-		 global float *restrict C, const int ldc
+		 global half *restrict A, const int lda,
+		 global half *restrict B, const int ldb,
+		 global half *restrict C, const int ldc
 		)
 {
   int i, j, k, m;
