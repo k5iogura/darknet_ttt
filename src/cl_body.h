@@ -9,7 +9,7 @@
 #include <CL/cl.h>
 
 #define MEM_SIZE (128)
-#define MAX_SOURCE_SIZE (0x500000)
+#define MAX_SOURCE_SIZE (0x5000000)
 
 #define MAX_ENV (10)
 static cl_device_id device_id[MAX_ENV];
@@ -126,11 +126,13 @@ cl_program cProgram(const char*fileName, cl_context context, cl_device_id device
 
     /* Create Kernel Program from the source */
     #ifdef onX86
+        printf("reading text source_size=%d\n",source_size);
         program = clCreateProgramWithSource (context, 1, (const char **) &source_str,
                                    (const size_t *) &source_size, &ret);
         checkErr(ret,"clCreateProgramWithSource");
     #else
         cl_int ret1;
+        printf("reading binary source_size=%d\n",source_size);
         program = clCreateProgramWithBinary (context, 1, &device_id, &source_size,
             (const unsigned char **) &source_str, &ret1, &ret);
         checkErr(ret,"clCreateProgramWithBinary");

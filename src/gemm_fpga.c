@@ -12,7 +12,7 @@
 #endif
 
 #define MEM_SIZE (128)
-#define MAX_SOURCE_SIZE (0x500000)
+#define MAX_SOURCE_SIZE (0x50000)
 
 #ifdef FPGA
 #include "cl_body.h"
