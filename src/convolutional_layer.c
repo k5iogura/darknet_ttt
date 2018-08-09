@@ -647,6 +647,25 @@ void forward_convolutional_layer_hf(convolutional_layer l, network net)
 #else
         error("Need OPENEXR Define-0");
 #endif
+    }else if(1){    // for gemm1_halfxf_halfx9.cl im2col+row2col_major
+#ifdef OPENEXR
+        float *b = net.workspace;
+        float *c = l.output;
+        half *a_hf = l.weights_hf;
+        half *b_hf = net.workspace_hf;
+        half *c_hf = l.output_hf;
+        float *B = (float*)malloc(sizeof(float)*k*n);
+
+        im2col_cpu(net.input, l.c, l.h, l.w, l.size, l.stride, l.pad, b);
+        row2col_major(n, k, b, B);
+        float2half(k*n, B, 1, b_hf, 1);
+        printf("%9.6f ", what_time_is_it_now()-time);
+        gemm_hf(0, 1, 0, m, n, k, 1, a_hf, k, b_hf, k, 1, c_hf, n);
+        half2float(m*n, c_hf, 1, c, 1);
+        free(B);
+#else
+        error("Need OPENEXR Define-0");
+#endif
     }
 
     // with im2row version for gemm_ntt
@@ -670,7 +689,7 @@ void forward_convolutional_layer_hf(convolutional_layer l, network net)
         //gemm2(1,1,1, m, n, k, 1, a, m, b, k, 1, c, m);     //OK for instead of FPGA Model
         gemm2(0,1,1, m, n, k, 1, A, k, b, k, 1, c, m);     //OK for instead of FPGA Model
         free(A);
-    }else if(1){ // with FPGA Model for gemm_ntt.cl and gemm_ntt_jik.cl and gemm_ntt_jikK.cl
+    }else if(0){ // with FPGA Model for gemm_ntt.cl and gemm_ntt_jik.cl and gemm_ntt_jikK.cl
 #ifdef OPENEXR
         float *a = net.workspace;
         float *b = l.weights;
