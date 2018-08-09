@@ -38,7 +38,7 @@ void gemm_bin(int M, int N, int K, float ALPHA,
 float *random_matrix(int rows, int cols)
 {
     int i;
-    float *m = calloc(rows*cols, sizeof(float));
+    float *m = (float*)calloc(rows*cols, sizeof(float));
     for(i = 0; i < rows*cols; ++i){
         m[i] = (float)rand()/RAND_MAX;
     }
@@ -568,8 +568,11 @@ void gemm_hf(int TA, int TB, int TC,
 //        gemm_ntt(M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
 #endif
     else if(!TA &&  TB && !TC)   // R C R   0 1 0 for FPGA with im2col_col_major Model
-//        gemm_ntn(M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
-        i=0;
+#ifdef FPGA
+        gemm_nn_fpga_half(M, N, K, ALPHA, A, lda, B, ldb, C, ldc);
+#else
+#endif
+        //gemm_ntn(M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
     else if( TA &&  TB &&  TC)   // C C C   1 1 1
 //        gemm_ttt(M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
         i=0;
