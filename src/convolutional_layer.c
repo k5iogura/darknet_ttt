@@ -722,10 +722,10 @@ void forward_convolutional_layer_hf(convolutional_layer l, network net)
             gemm_hf(0,1,1, m, n, k, 1, a_hf, k, b_hf, k, 1, c_hf, m);     //OK for instead of FPGA Model
             half2float(m*n, c_hf, 1, c, 1);
             free(A);
-    #else
-            error("Need OPENEXR Define-1");
-    #endif
         }
+#else
+            error("Need OPENEXR Define-1");
+#endif
     }
 
     if(!l.batch_normalize){
