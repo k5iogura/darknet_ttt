@@ -6,7 +6,7 @@
 #ifndef _CL_BODY_H_
 #define _CL_BODY_H_
 
-#include <CL/cl.h>
+#include <CL/opencl.h>
 
 #define MEM_SIZE (128)
 #define MAX_SOURCE_SIZE (0x5000000)
@@ -14,6 +14,9 @@
 #define MAX_ENV (10)
 static cl_device_id device_id[MAX_ENV];
 static cl_platform_id platform_id[MAX_ENV];
+
+static int SVM_COARSE_GRAIN_BUFFER[MAX_ENV]={0};
+static int SVM_FINE_GRAIN_BUFFER[MAX_ENV]={0};
 
 void checkErr(cl_int err,const char *name)
 {
@@ -79,6 +82,7 @@ cl_device_id ocl_init (const char *target_name) {
     /* Get Device and info */
     cl_ulong local_mem;
     char platform_name[1024], device_name[1024];
+    cl_device_svm_capabilities svmCap;
     for(i=0;i<(int)ret_num_platforms;i++){
         clGetPlatformInfo(platform_id[i],CL_PLATFORM_NAME,sizeof(platform_name),platform_name,NULL);
         printf("\tNo.%d-\"%s\"\n",i,platform_name);
@@ -89,6 +93,9 @@ cl_device_id ocl_init (const char *target_name) {
             clGetDeviceInfo(device_id[j], CL_DEVICE_NAME,sizeof(device_name),device_name,NULL);
             clGetDeviceInfo(device_id[j], CL_DEVICE_LOCAL_MEM_SIZE, sizeof(cl_ulong),&local_mem,NULL);
             printf("\t\tNo.%d-\"%s\" : LOCAL_MEM_SIZE=%lu\n",j,device_name,local_mem);
+            clGetDeviceInfo(device_id[j], CL_DEVICE_SVM_CAPABILITIES, sizeof(cl_device_svm_capabilities),&svmCap,NULL);
+            if((svmCap&CL_DEVICE_SVM_COARSE_GRAIN_BUFFER)!=0){SVM_COARSE_GRAIN_BUFFER[j]=1;printf("\t\tSupport SVM_COARSE_GRAIN\n");}
+            if((svmCap&CL_DEVICE_SVM_FINE_GRAIN_BUFFER  )!=0){SVM_FINE_GRAIN_BUFFER[j]=1;printf("\t\tSupport SVM_FINE_GRAIN\n");}
         }
         if(target_name && !strcmp(platform_name, target_name) && ret_num_devices>0) target_device = device_id[0];
     }
