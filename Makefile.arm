@@ -94,7 +94,7 @@ CC = $(CX)
 endif
 
 ifeq ($(CBLAS),1)
-COMMON+= -DCBLAS $(shell pkg-config --cflags openblas) $(pkg-config --cflags IlmBase)
+COMMON+= -DCBLAS $(shell pkg-config --cflags openblas) $(shell pkg-config --cflags IlmBase)
 LDFLAGS+= $(shell pkg-config --libs openblas) $(shell pkg-config --libs IlmBase) -lstdc++
 endif
 
