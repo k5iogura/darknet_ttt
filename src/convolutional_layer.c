@@ -602,6 +602,36 @@ void col2row_major(int sz_col, int sz_row, float *colm_src, float *rowm_dst){
         }
 }
 
+void expand_line_length(int lines, int line_length, int expand_length, float*X, float*Y){
+    int i,s,j;
+    for(j=0; j<lines; j++)
+        for(i=0; i<line_length + expand_length; i++)
+            if(i<line_length)
+                Y[j*(line_length + expand_length) + i] =X[j*line_length + i];
+            else
+                Y[j*(line_length + expand_length) + i] =0;
+}
+
+void dump_weights_3_16(int index, int m, int n, int k, float *weights){
+    int i,j;
+    int gentypen = (!(k%16))?16:3;
+    char file_name[128];
+    sprintf(file_name,"weights_%d.cl",index);
+    FILE *fp=fopen(file_name,"w");
+    fprintf(fp,"constant float%d weights_layer_%d_row_major[%d*%d] = {\n",gentypen,index,m,k);
+    for(i=0;i<m*k;i+=gentypen){
+        fprintf(fp,"{");
+        for(j=0;j<gentypen;j++){
+            fprintf(fp,"%f",weights[i+j]);
+            if(j<gentypen-1) fprintf(fp,",");
+        }
+        fprintf(fp,"}");
+        if(i<m*k-gentypen-1) fprintf(fp,",\n");
+    }
+    fprintf(fp,"\n};\n");
+    fclose(fp);
+}
+
 void forward_convolutional_layer_hf(convolutional_layer l, network net)
 {
     int i;
@@ -647,22 +677,30 @@ void forward_convolutional_layer_hf(convolutional_layer l, network net)
 #else
         error("Need OPENEXR Define-0");
 #endif
-    }else if(0){    // for gemm1_halfxf_halfx9.cl im2col+row2col_major
+    }else if(1){    // for gemm1_halfxf_halfx9.cl im2col+row2col_major
 #ifdef OPENEXR
         float *b = net.workspace;
         float *c = l.output;
         half *a_hf = l.weights_hf;
         half *b_hf = net.workspace_hf;
         half *c_hf = l.output_hf;
-        float *B = (float*)malloc(sizeof(float)*k*n);
 
+        float *B = (float*)malloc(sizeof(float)*k*n);
+        int k_pad = ((k%16))?(int(k/16+1)*16)%k:0;
+        float *b_pad = (float*)malloc(sizeof(float)*(k+k_pad)*n);
+
+        //dump_weights_3_16(net.index, m, n, k, l.weights);
         im2col_cpu(net.input, l.c, l.h, l.w, l.size, l.stride, l.pad, b);
         row2col_major(n, k, b, B);
+
+        //expand_line_length(n, k, k_pad, B, b_pad);
+        //float2half((k+k_pad)*n, b_pad, 1, b_hf, 1);
         float2half(k*n, B, 1, b_hf, 1);
         printf("%9.6f ", what_time_is_it_now()-time);
+        //gemm_hf(0, 1, 0, m, n, k, 1, a_hf, k, b_hf, k+k_pad, 1, c_hf, n);
         gemm_hf(0, 1, 0, m, n, k, 1, a_hf, k, b_hf, k, 1, c_hf, n);
         half2float(m*n, c_hf, 1, c, 1);
-        free(B);
+        free(B);free(b_pad);
 #else
         error("Need OPENEXR Define-0");
 #endif
@@ -689,7 +727,7 @@ void forward_convolutional_layer_hf(convolutional_layer l, network net)
         //gemm2(1,1,1, m, n, k, 1, a, m, b, k, 1, c, m);     //OK for instead of FPGA Model
         gemm2(0,1,1, m, n, k, 1, A, k, b, k, 1, c, m);     //OK for instead of FPGA Model
         free(A);
-    }else if(1){ // with FPGA Model for gemm_ntt.cl and gemm_ntt_jik.cl and gemm_ntt_jikK.cl
+    }else if(0){ // with FPGA Model for gemm_ntt.cl and gemm_ntt_jik.cl and gemm_ntt_jikK.cl
 #ifdef OPENEXR
         //if(net.index==0 || net.index==2){
         if(1 && (net.index==0 || net.index==2 || net.index==7)){
