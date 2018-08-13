@@ -18,9 +18,7 @@
 #include "cl_body.h"
 #endif
 
-#ifdef OPENEXR
-#include <OpenEXR/half.h>
-#endif
+#include "half.h"
 
 //static cl_device_id device_id = NULL;
 static cl_context context = NULL;
@@ -134,11 +132,11 @@ void gemm_ntt_fpga_half(int M, int N, int K, float ALPHA,
         half *B, int ldb,
         half *C, int ldc) {
     cl_int ret=0;
-    memobjA = clCreateBuffer (context, CL_MEM_READ_ONLY|CL_MEM_USE_HOST_PTR,
+    memobjA = clCreateBuffer (context, CL_MEM_READ_ONLY|CL_MEM_COPY_HOST_PTR|CL_MEM_ALLOC_HOST_PTR,
 					  M * K * sizeof (cl_half), A, &ret);  checkErr(ret,"clCreateBuffer-0");
-    memobjB = clCreateBuffer (context, CL_MEM_READ_ONLY|CL_MEM_USE_HOST_PTR,
+    memobjB = clCreateBuffer (context, CL_MEM_READ_ONLY|CL_MEM_COPY_HOST_PTR|CL_MEM_ALLOC_HOST_PTR,
 					  K * N * sizeof (cl_half), B, &ret);  checkErr(ret,"clCreateBuffer-1");
-    memobjC = clCreateBuffer (context, CL_MEM_READ_WRITE|CL_MEM_USE_HOST_PTR,
+    memobjC = clCreateBuffer (context, CL_MEM_READ_WRITE|CL_MEM_COPY_HOST_PTR|CL_MEM_ALLOC_HOST_PTR,
 					  M * N * sizeof (cl_half), C, &ret);  checkErr(ret,"clCreateBuffer-2");
 
     if(!(K%27))
@@ -160,6 +158,7 @@ void gemm_ntt_fpga_half(int M, int N, int K, float ALPHA,
 
 /* Execute OpenCL Kernel */
     ret = clEnqueueTask (command_queue, kernel, 0, NULL, NULL);   checkErr(ret,"clEnqueueTask");
+    ret = clEnqueueReadBuffer(command_queue, memobjC, CL_TRUE, 0, sizeof(half)*M*N, C, 0, NULL, NULL);
     clFinish(command_queue);
     ret = clReleaseMemObject (memobjA);
     ret = clReleaseMemObject (memobjB);
