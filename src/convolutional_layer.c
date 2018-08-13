@@ -16,6 +16,7 @@
 #include "xnor_layer.h"
 #endif
 
+#include "half.h"
 void swap_binary(convolutional_layer *l)
 {
     float *swap = l->weights;
@@ -677,7 +678,7 @@ void forward_convolutional_layer_hf(convolutional_layer l, network net)
 #else
         error("Need OPENEXR Define-0");
 #endif
-    }else if(1){    // for gemm1_halfxf_halfx9.cl im2col+row2col_major
+    }else if(0){    // for gemm1_halfxf_halfx9.cl im2col+row2col_major
 #ifdef OPENEXR
         float *b = net.workspace;
         float *c = l.output;
@@ -686,7 +687,7 @@ void forward_convolutional_layer_hf(convolutional_layer l, network net)
         half *c_hf = l.output_hf;
 
         float *B = (float*)malloc(sizeof(float)*k*n);
-        int k_pad = ((k%16))?(int(k/16+1)*16)%k:0;
+        int k_pad = ((k%16))?((int)(k/16+1)*16)%k:0;
         float *b_pad = (float*)malloc(sizeof(float)*(k+k_pad)*n);
 
         //dump_weights_3_16(net.index, m, n, k, l.weights);
@@ -727,10 +728,19 @@ void forward_convolutional_layer_hf(convolutional_layer l, network net)
         //gemm2(1,1,1, m, n, k, 1, a, m, b, k, 1, c, m);     //OK for instead of FPGA Model
         gemm2(0,1,1, m, n, k, 1, A, k, b, k, 1, c, m);     //OK for instead of FPGA Model
         free(A);
-    }else if(0){ // with FPGA Model for gemm_ntt.cl and gemm_ntt_jik.cl and gemm_ntt_jikK.cl
+    }else if(0){ // All OpenBLAS
+            float *a = net.workspace;
+            float *b = l.weights;
+            float *c = l.output;
+            TensorDim in_dim  ={ 1, l.c, l.h, l.w };
+            TensorDim filt_dim={ l.out_c, l.c, l.size, l.size };
+            CppConvnetIm2Row(a, net.input, out_w, out_h, k, in_dim, filt_dim, l.stride, l.pad);
+            printf("%9.6f ", what_time_is_it_now()-time);
+            cblas_sgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, m, n, k, 1, a, m, b, k, 1, c, m); //OK
+    }else if(1){ // with FPGA Model for gemm_ntt.cl and gemm_ntt_jik.cl and gemm_ntt_jikK.cl
 #ifdef OPENEXR
         //if(net.index==0 || net.index==2){
-        if(1 && (net.index==0 || net.index==2 || net.index==7)){
+        if(0 && (net.index==0 || net.index==2 || net.index==7)){
             float *a = net.workspace;
             float *b = l.weights;
             float *c = l.output;
@@ -750,8 +760,9 @@ void forward_convolutional_layer_hf(convolutional_layer l, network net)
             TensorDim in_dim  ={ 1, l.c, l.h, l.w };
             TensorDim filt_dim={ l.out_c, l.c, l.size, l.size };
             CppConvnetIm2Row(a, net.input, out_w, out_h, k, in_dim, filt_dim, l.stride, l.pad);
-            //col2row_cblas(l.c*l.size*l.size, out_w*out_h, a, A);
-            col2row_major(l.c*l.size*l.size, out_w*out_h, a, A);
+            col2row_cblas(l.c*l.size*l.size, out_w*out_h, a, A);
+            //col2row_major(l.c*l.size*l.size, out_w*out_h, a, A);
+            //col2row_major(l.c*l.size*l.size, m, a, A);
             //col2row_major(k,m,b,B);
             //row2col_major(l.c*l.size*l.size, out_w*out_h, A, a);
 
