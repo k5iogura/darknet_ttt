@@ -1,4 +1,5 @@
 #ifdef FPGA
+#include "half.h"
 // GEMM on FPGA 
 
 //Initialize FPGA Platform until to get commandQueue.
