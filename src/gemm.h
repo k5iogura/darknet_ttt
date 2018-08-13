@@ -1,6 +1,7 @@
 #ifndef GEMM_H
 #define GEMM_H
 
+#include "half.h"
 void set_FPGA_init();
 void unset_FPGA_init();
 int  get_FPGA_init();
