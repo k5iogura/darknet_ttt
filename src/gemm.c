@@ -1,6 +1,4 @@
-#ifdef __cplusplus
-#include <OpenEXR/half.h>
-#endif
+#include "half.h"
 #include "gemm.h"
 #include "gemm_fpga.h"
 #include "utils.h"
