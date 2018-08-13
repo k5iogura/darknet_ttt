@@ -5,9 +5,7 @@
 #include <string.h>
 #include <pthread.h>
 
-#ifdef OPENEXR
-#include <OpenEXR/half.h>
-#endif
+#include "half.h"
 
 #define SECRET_NUM -1234
 extern int gpu_index;
