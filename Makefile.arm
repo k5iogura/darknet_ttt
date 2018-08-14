@@ -31,8 +31,8 @@ CX=arm-linux-gnueabihf-g++
 NVCC=nvcc 
 AR=arm-linux-gnueabihf-ar
 ARFLAGS=rcs
-#OPTS=-Ofast
-OPTS=-O3
+OPTS=-Ofast
+#OPTS=-O3
 LDFLAGS= -lm -pthread 
 COMMON= -Iinclude/ -Isrc/
 
