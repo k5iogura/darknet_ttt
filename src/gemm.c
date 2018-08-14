@@ -427,9 +427,13 @@ void gemm_ttt(int M, int N, int K, float ALPHA,
 }
 
 static int FPGA_init=0;
+static int NONBLOCKING_LAUNCH=0;
 void set_FPGA_init(){FPGA_init=1;}
 void unset_FPGA_init(){FPGA_init=0;}
 int  get_FPGA_init(){return FPGA_init;}
+void set_Nonblocking_launch(){NONBLOCKING_LAUNCH=1;}
+void unset_Nonblocking_launch(){NONBLOCKING_LAUNCH=0;}
+int  get_Nonblocking_launch(){return NONBLOCKING_LAUNCH;}
 
 void gemm_cpu(int TA, int TB, int M, int N, int K, float ALPHA, 
         float *A, int lda, 
@@ -563,8 +567,7 @@ void gemm_hf(int TA, int TB, int TC,
 #ifdef FPGA
         gemm_ntt_fpga_half(M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
 #else
-//        gemm_ntt(M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
-        i=0;
+        error("not support !TA,TB,TC");
 #endif
     else if(!TA &&  TB && !TC)   // R C R   0 1 0 for FPGA with im2col_col_major Model
 #ifdef FPGA
