@@ -472,7 +472,7 @@ void resize_convolutional_layer(convolutional_layer *l, int w, int h)
 //
 void add_bias_cblas(float *output, float *biases, int batch, int n, int size)   //add
 {
-    int i,j,b;
+    int i,b;
     for(b = 0; b < batch; ++b){
         for(i = 0; i < n; ++i){
             //for(j = 0; j < size; ++j){
@@ -576,7 +576,7 @@ void normalize_weights(layer l, float *weights){
 }
 
 void col2row_cblas(int sz_col, int sz_row, float* colm_src, float* rowm_dst){
-    int c,r;
+    int r;
     for(r=0; r<sz_row; r++)
         cblas_scopy(sz_col, colm_src+r, sz_row, rowm_dst+r*sz_col, 1);
 }
@@ -604,7 +604,7 @@ void col2row_major(int sz_col, int sz_row, float *colm_src, float *rowm_dst){
 }
 
 void expand_line_length(int lines, int line_length, int expand_length, float*X, float*Y){
-    int i,s,j;
+    int i,j;
     for(j=0; j<lines; j++)
         for(i=0; i<line_length + expand_length; i++)
             if(i<line_length)
@@ -749,9 +749,30 @@ void forward_convolutional_layer_hf(convolutional_layer l, network net)
             CppConvnetIm2Row(a, net.input, out_w, out_h, k, in_dim, filt_dim, l.stride, l.pad);
             printf("%9.6f ", what_time_is_it_now()-time);
             cblas_sgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, m, n, k, 1, a, m, b, k, 1, c, m); //OK
-        }else{
+        }else if(1){    // run with budget btwn cblas and gemm_ntt_jikK.cl
+            int N1 = n/16, N2 = n-N1;
             float *a = net.workspace;
             float *b = l.weights;
+            float *c = l.output;
+            float *A = (float*)malloc(sizeof(float)*(l.out_w*l.out_h)*(l.size*l.size*l.c));
+            half *a_hf = net.workspace_hf;
+            half *b_hf = l.weights_hf;
+            half *c_hf = l.output_hf;
+            TensorDim in_dim  ={ 1, l.c, l.h, l.w };
+            TensorDim filt_dim={ l.out_c, l.c, l.size, l.size };
+            CppConvnetIm2Row(a, net.input, out_w, out_h, k, in_dim, filt_dim, l.stride, l.pad);
+            col2row_cblas(l.c*l.size*l.size, out_w*out_h, a, A);
+            float2half(m*k, A, 1, a_hf, 1);
+            printf("%9.6f ", what_time_is_it_now()-time);
+            set_Nonblocking_launch();
+            gemm_hf(0,1,1, m, N1, k, 1, a_hf, k, b_hf, k, 1, c_hf, m);     //OK for instead of FPGA Model
+            cblas_sgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, m, N2, k, 1, a, m, b+N1*k, k, 1, c+N1*m, m); //OK
+            wait_kernel_finish();
+            half2float(m*N1, c_hf, 1, c, 1);
+            free(A);
+        }else{          // gemm_ntt_jikK.cl
+            float *a = net.workspace;
+            //float *b = l.weights;
             float *c = l.output;
             float *A = (float*)malloc(sizeof(float)*(l.out_w*l.out_h)*(l.size*l.size*l.c));
             half *a_hf = net.workspace_hf;
@@ -835,7 +856,7 @@ void forward_convolutional_layer_foldBN(convolutional_layer l, network net)
         float *b = l.weights;
         float *c = l.output;
         float *A = (float*)malloc(sizeof(float)*(l.out_w*l.out_h)*(l.size*l.size*l.c));
-        float *B = (float*)malloc(sizeof(float)*k*m);
+        //float *B = (float*)malloc(sizeof(float)*k*m);
         TensorDim in_dim  ={ 1, l.c, l.h, l.w };
         TensorDim filt_dim={ l.out_c, l.c, l.size, l.size };
         CppConvnetIm2Row(a, net.input, out_w, out_h, k, in_dim, filt_dim, l.stride, l.pad);
