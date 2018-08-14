@@ -740,7 +740,7 @@ void forward_convolutional_layer_hf(convolutional_layer l, network net)
     }else if(1){ // with FPGA Model for gemm_ntt.cl and gemm_ntt_jik.cl and gemm_ntt_jikK.cl
 #ifdef OPENEXR
         //if(net.index==0 || net.index==2){
-        if(0 && (net.index==0 || net.index==2 || net.index==7)){
+        if(1 && (net.index==0 || net.index==2 || net.index==7)){
             float *a = net.workspace;
             float *b = l.weights;
             float *c = l.output;
@@ -749,7 +749,7 @@ void forward_convolutional_layer_hf(convolutional_layer l, network net)
             CppConvnetIm2Row(a, net.input, out_w, out_h, k, in_dim, filt_dim, l.stride, l.pad);
             printf("%9.6f ", what_time_is_it_now()-time);
             cblas_sgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, m, n, k, 1, a, m, b, k, 1, c, m); //OK
-        }else if(1){    // run with budget btwn cblas and gemm_ntt_jikK.cl
+        }else if(0){    // run with budget btwn cblas and gemm_ntt_jikK.cl
             int N1 = n/16, N2 = n-N1;
             float *a = net.workspace;
             float *b = l.weights;
