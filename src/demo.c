@@ -194,12 +194,20 @@ void demo(char *cfgfile, char *weightfile, float thresh, int cam_index, const ch
             cvSetWindowProperty("Demo", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
         } else {
             cvMoveWindow("Demo", 0, 0);
-            cvResizeWindow("Demo", 1352, 1013);
+            //cvResizeWindow("Demo", 1352, 1013);
+            //cvResizeWindow("Demo", 224, 160);
+            cvResizeWindow("Demo", 640, 480);
         }
     }
 
     demo_time = get_wall_time();
 
+//                              cyclic buff_index
+// fetch in buff              -> 1 -> 2 -> 0 -> 1  ...
+// draw from buff on window   -> 2 -> 0 -> 1 -> 2  ...
+//                                  /    /    /
+//                                 /    /    /
+// detect & draw in buff      -> 0 -> 1 -> 2 -> 0  ...
     while(!demo_done){
         buff_index = (buff_index + 1) %3;
         if(pthread_create(&fetch_thread, 0, fetch_in_thread, 0)) error("Thread creation failed");

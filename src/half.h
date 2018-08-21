@@ -6,6 +6,7 @@
 
 #else
 
+#ifdef OPENEXR
 #ifdef __cplusplus
 
 #include <OpenEXR/half.h>
@@ -14,6 +15,7 @@
 
 Cant compile
 
+#endif
 #endif
 
 #endif

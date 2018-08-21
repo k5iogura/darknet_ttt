@@ -728,7 +728,7 @@ void forward_convolutional_layer_hf(convolutional_layer l, network net)
         //gemm2(1,1,1, m, n, k, 1, a, m, b, k, 1, c, m);     //OK for instead of FPGA Model
         gemm2(0,1,1, m, n, k, 1, A, k, b, k, 1, c, m);     //OK for instead of FPGA Model
         free(A);
-    }else if(0){ // All OpenBLAS
+    }else if(1){ // All OpenBLAS
             float *a = net.workspace;
             float *b = l.weights;
             float *c = l.output;
