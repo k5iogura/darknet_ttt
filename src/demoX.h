@@ -3,14 +3,14 @@
 
 // Bridge btn detect main thread and movie thread
 typedef struct{
-    pthread_mutex_t img_mutex;
-    pthread_mutex_t det_mutex;
     struct {
+        pthread_mutex_t mutex;
         image buff;
-        int w,h,n;
-        int classes;
     } img;
     struct {
+        pthread_mutex_t mutex;
+        int w,h,n;
+        int classes;
         float **probs;
         box *boxes;
     } det;

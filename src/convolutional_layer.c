@@ -737,7 +737,7 @@ void forward_convolutional_layer_hf(convolutional_layer l, network net)
             TensorDim in_dim  ={ 1, l.c, l.h, l.w };
             TensorDim filt_dim={ l.out_c, l.c, l.size, l.size };
             CppConvnetIm2Row(a, net.input, out_w, out_h, k, in_dim, filt_dim, l.stride, l.pad);
-            printf("%9.6f ", what_time_is_it_now()-time);
+       //     printf("%9.6f ", what_time_is_it_now()-time);
             cblas_sgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, m, n, k, 1, a, m, b, k, 1, c, m); //OK
     }else if(1){ // with FPGA Model for gemm_ntt.cl and gemm_ntt_jik.cl and gemm_ntt_jikK.cl
 #ifdef OPENEXR

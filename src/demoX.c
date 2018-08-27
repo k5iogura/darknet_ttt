@@ -57,6 +57,42 @@ static double get_wall_time()
     return (double)time.tv_sec + (double)time.tv_usec * .000001;
 }
 
+static void bridge_img2local(Bridge bridge, image buff){
+    int i;
+    pthread_mutex_lock(&bridge.img.mutex);
+    for(i=0;i<buff.w*buff.h*buff.c;i++) buff.data[i] = bridge.img.buff.data[i];
+    pthread_mutex_unlock(&bridge.img.mutex);
+}
+
+void local2bridge_img(image *buff_letter, Bridge bridge){
+    int i;
+    pthread_mutex_lock(&bridge.img.mutex);
+    for(i=0;i<bridge.img.buff.w*bridge.img.buff.h*bridge.img.buff.c;i++)
+        bridge.img.buff.data[i] = buff_letter[(buff_index + 2)%3].data[i];
+    pthread_mutex_unlock(&bridge.img.mutex);
+}
+
+static void local2bridge_det(box *boxes, float **probs, Bridge bridge){
+    int i,j;
+    pthread_mutex_lock(&bridge.det.mutex);
+        for(i=0;i<bridge.det.w*bridge.det.h*bridge.det.n;i++){
+            bridge.det.boxes[i] = boxes[i];
+            for(j=0;j<bridge.det.classes+1;j++)
+                bridge.det.probs[i][j] = probs[i][j];
+        }
+    pthread_mutex_unlock(&bridge.det.mutex);
+}
+
+void bridge_det2local(Bridge bridge, box *boxes, float **probs){
+    int i,j;
+    pthread_mutex_lock(&bridge.det.mutex);
+    for(i=0;i<bridge.det.w*bridge.det.h*bridge.det.n;i++){
+        boxes[i] = bridge.det.boxes[i];
+        for(j=0;j<bridge.det.classes+1;j++) probs[i][j] = bridge.det.probs[i][j];
+    }
+    pthread_mutex_unlock(&bridge.det.mutex);
+}
+
 static void *detect_in_threadX(void *ptr)
 {
     int i,j;
@@ -64,11 +100,7 @@ static void *detect_in_threadX(void *ptr)
     float nms = .4;
 
     layer l = net.layers[net.n-1];
-    pthread_mutex_lock(&bridge.img_mutex);
-    {
-        for(i=0;i<buffX.w*buffX.h*buffX.c;i++) buffX.data[i] = bridge.img.buff.data[i];
-    }
-    pthread_mutex_unlock(&bridge.img_mutex);
+    bridge_img2local(bridge, buffX);
     float *X = buffX.data;
     float *prediction = network_predict(net, X);
 
@@ -83,21 +115,20 @@ static void *detect_in_threadX(void *ptr)
         error("Last layer must produce detections\n");
     }
     if (nms > 0) do_nms_obj(boxesX, probsX, l.w*l.h*l.n, l.classes, nms);
-    pthread_mutex_lock(&bridge.det_mutex);
-    {
-        for(i=0;i<bridge.img.w*bridge.img.h*bridge.img.n;i++){
-            bridge.det.boxes[i] = boxesX[i];
-            for(j=0;j<bridge.img.classes+1;j++)
-                bridge.det.probs[i][j] = probsX[i][j];
-        }
-    }
-    pthread_mutex_unlock(&bridge.det_mutex);
+    local2bridge_det(boxesX, probsX, bridge);
 
     printf("\033[2J");
     printf("\033[1;1H");
     printf("\nFPS:%.1f\n",fps);
     printf("Objects:\n\n");
 
+    for(i = 0; i < bridge.det.w*bridge.det.h*bridge.det.n; ++i){
+        int class = max_index(probsX[i], bridge.det.classes);
+        float prob = probsX[i][class];
+        if(prob > demo_thresh){
+            printf("%s: %.0f%%\n", demo_names[class], prob*100);
+        }
+    }
     demo_index = (demo_index + 1)%demo_frame;
     running = 0;
     return 0;
@@ -138,10 +169,10 @@ static void *display_in_threadX(void *ptr)
 static void make_bridge(layer last_layer){
     int j;
     bridge.img.buff = copy_image(buff_letter[0]);
-    bridge.img.w=last_layer.w;
-    bridge.img.h=last_layer.h;
-    bridge.img.n=last_layer.n;
-    bridge.img.classes=last_layer.classes;
+    bridge.det.w=last_layer.w;
+    bridge.det.h=last_layer.h;
+    bridge.det.n=last_layer.n;
+    bridge.det.classes=last_layer.classes;
 
     bridge.det.boxes = (box *)   calloc(last_layer.w*last_layer.h*last_layer.n, sizeof(box));
     bridge.det.probs = (float **)calloc(last_layer.w*last_layer.h*last_layer.n, sizeof(float *));
@@ -156,20 +187,10 @@ static void *movie_loop_in_thread(void *ptr)
         int i,j;
         buff_index = (buff_index + 1) %3;
         if(pthread_create(&fetch_thread, 0, fetch_in_threadX, 0)) error("Thread creation failed");
-        pthread_mutex_lock(&bridge.img_mutex);
-        {
-            for(i=0;i<bridge.img.buff.w*bridge.img.buff.h*bridge.img.buff.c;i++)
-                bridge.img.buff.data[i] = buff_letter[(buff_index + 2)%3].data[i];
-        }
-        pthread_mutex_unlock(&bridge.img_mutex);
-        pthread_mutex_lock(&bridge.det_mutex);
-        {
-            for(i=0;i<bridge.img.w*bridge.img.h*bridge.img.n;i++){
-                boxes[i] = bridge.det.boxes[i];
-                for(j=0;j<bridge.img.classes+1;j++) probs[i][j] = bridge.det.probs[i][j];
-            }
-        }
-        pthread_mutex_unlock(&bridge.det_mutex);
+
+        local2bridge_img(buff_letter, bridge);
+        bridge_det2local(bridge, boxes, probs);
+
         fps = 1./(get_wall_time() - demo_time);
         demo_time = get_wall_time();
         pthread_join(fetch_thread, 0);
