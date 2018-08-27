@@ -42,17 +42,6 @@ static int demo_done = 0;
 static float *avg;
 double demo_time;
 
-typedef struct{
-    pthread_mutex_t img_mutex;
-    pthread_mutex_t det_mutex;
-    image buff;
-    int w,h,n;
-    int classes;
-    float **probs;
-    box *boxes;
-} Bridge;
-static Bridge bridge;
-
 double get_wall_time()
 {
     struct timeval time;
@@ -137,46 +126,6 @@ void *detect_loop(void *ptr)
     while(1){
         detect_in_thread(0);
     }
-}
-
-void make_bridge(layer l){
-    int j;
-    bridge.buff = copy_image(buff_letter[0]);
-    bridge.w=l.w;
-    bridge.h=l.h;
-    bridge.n=l.n;
-    bridge.classes=l.classes;
-
-    bridge.boxes = (box *)   calloc(l.w*l.h*l.n, sizeof(box));
-    bridge.probs = (float **)calloc(l.w*l.h*l.n, sizeof(float *));
-    for(j = 0; j < l.w*l.h*l.n; ++j) bridge.probs[j] = (float *)calloc(l.classes+1, sizeof(float));
-}
-void *fetch_draw_loop_in_thread(void *ptr)
-{
-    int i,j;
-    while(!demo_done){
-        buff_index = (buff_index + 1) %3;
-
-        fetch_in_thread(0);
-
-        pthread_mutex_lock(&bridge.img_mutex);
-        image buff_p = buff_letter[(buff_index + 2) %3];
-        bridge.buff.w = buff_p.w;
-        bridge.buff.h = buff_p.h;
-        bridge.buff.c = buff_p.c;
-        for(i=0;i<buff_p.w*buff_p.h*buff_p.c;i++) bridge.buff.data[i] = buff_p.data[i];
-        pthread_mutex_unlock(&bridge.img_mutex);
-
-        pthread_mutex_lock(&bridge.det_mutex);
-        for(i=0;i<bridge.w*bridge.h*bridge.n;i++){
-            bridge.boxes[i] = boxes[i];
-            for(j=0;j<bridge.classes+1;j++) bridge.probs[i][j] = probs[i][j];
-        }
-        pthread_mutex_unlock(&bridge.det_mutex);
-
-        display_in_thread(0);
-    }
-    return 0;
 }
 
 void demo(char *cfgfile, char *weightfile, float thresh, int cam_index, const char *filename, char **names, int classes, int delay, char *prefix, int avg_frames, float hier, int w, int h, int frames, int fullscreen)
