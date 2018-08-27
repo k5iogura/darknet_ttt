@@ -1,5 +1,7 @@
 #ifndef __DEMOX_H__
 #define __DEMOX_H__
+
+// Bridge btn detect main thread and movie thread
 typedef struct{
     pthread_mutex_t img_mutex;
     pthread_mutex_t det_mutex;
@@ -8,7 +10,10 @@ typedef struct{
         int w,h,n;
         int classes;
     } img;
-    float **probs;
-    box *boxes;
+    struct {
+        float **probs;
+        box *boxes;
+    } det;
 } Bridge;
+
 #endif

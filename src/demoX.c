@@ -64,9 +64,10 @@ static void *detect_in_threadX(void *ptr)
     float nms = .4;
 
     layer l = net.layers[net.n-1];
-    //float *X = buff_letter[(buff_index+2)%3].data;
     pthread_mutex_lock(&bridge.img_mutex);
-    for(i=0;i<buffX.w*buffX.h*buffX.c;i++) buffX.data[i] = bridge.img.buff.data[i];
+    {
+        for(i=0;i<buffX.w*buffX.h*buffX.c;i++) buffX.data[i] = bridge.img.buff.data[i];
+    }
     pthread_mutex_unlock(&bridge.img_mutex);
     float *X = buffX.data;
     float *prediction = network_predict(net, X);
@@ -83,10 +84,12 @@ static void *detect_in_threadX(void *ptr)
     }
     if (nms > 0) do_nms_obj(boxesX, probsX, l.w*l.h*l.n, l.classes, nms);
     pthread_mutex_lock(&bridge.det_mutex);
-    for(i=0;i<bridge.img.w*bridge.img.h*bridge.img.n;i++){
-        bridge.boxes[i] = boxesX[i];
-        for(j=0;j<bridge.img.classes+1;j++)
-            bridge.probs[i][j] = probsX[i][j];
+    {
+        for(i=0;i<bridge.img.w*bridge.img.h*bridge.img.n;i++){
+            bridge.det.boxes[i] = boxesX[i];
+            for(j=0;j<bridge.img.classes+1;j++)
+                bridge.det.probs[i][j] = probsX[i][j];
+        }
     }
     pthread_mutex_unlock(&bridge.det_mutex);
 
@@ -94,8 +97,6 @@ static void *detect_in_threadX(void *ptr)
     printf("\033[1;1H");
     printf("\nFPS:%.1f\n",fps);
     printf("Objects:\n\n");
-    //image display = buff[(buff_index+2) % 3];
-    //draw_detections(display, demo_detections, demo_thresh, boxes, probs, 0, demo_names, demo_alphabet, demo_classes);
 
     demo_index = (demo_index + 1)%demo_frame;
     running = 0;
@@ -142,10 +143,10 @@ static void make_bridge(layer last_layer){
     bridge.img.n=last_layer.n;
     bridge.img.classes=last_layer.classes;
 
-    bridge.boxes = (box *)   calloc(last_layer.w*last_layer.h*last_layer.n, sizeof(box));
-    bridge.probs = (float **)calloc(last_layer.w*last_layer.h*last_layer.n, sizeof(float *));
+    bridge.det.boxes = (box *)   calloc(last_layer.w*last_layer.h*last_layer.n, sizeof(box));
+    bridge.det.probs = (float **)calloc(last_layer.w*last_layer.h*last_layer.n, sizeof(float *));
     for(j = 0; j < last_layer.w*last_layer.h*last_layer.n; ++j)
-        bridge.probs[j] = (float *)calloc(last_layer.classes+1, sizeof(float));
+        bridge.det.probs[j] = (float *)calloc(last_layer.classes+1, sizeof(float));
 }
 
 static void *movie_loop_in_thread(void *ptr)
@@ -164,8 +165,8 @@ static void *movie_loop_in_thread(void *ptr)
         pthread_mutex_lock(&bridge.det_mutex);
         {
             for(i=0;i<bridge.img.w*bridge.img.h*bridge.img.n;i++){
-                boxes[i] = bridge.boxes[i];
-                for(j=0;j<bridge.img.classes+1;j++) probs[i][j] = bridge.probs[i][j];
+                boxes[i] = bridge.det.boxes[i];
+                for(j=0;j<bridge.img.classes+1;j++) probs[i][j] = bridge.det.probs[i][j];
             }
         }
         pthread_mutex_unlock(&bridge.det_mutex);
