@@ -672,7 +672,9 @@ void forward_convolutional_layer_hf(convolutional_layer l, network net)
 
         im2col_cpu(net.input, l.c, l.h, l.w, l.size, l.stride, l.pad, b);
         float2half(k*n, b, 1, b_hf, 1);
+#ifdef GET_LAYER_TIME
         printf("%9.6f ", what_time_is_it_now()-time);
+#endif
         gemm_hf(0, 0, 0, m, n, k, 1, a_hf, k, b_hf, n, 1, c_hf, n);    //OK FPGA gemm1_naive_half.aocx
         half2float(m*n, c_hf, 1, c, 1);
 #else
