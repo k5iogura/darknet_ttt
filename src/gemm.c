@@ -257,13 +257,17 @@ void gemm_nn_cblas(int M, int N, int K, float ALPHA,
         float *B, int ldb,
         float *C, int ldc)
 {
+#ifdef CBLAS
     cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, M, N, K, ALPHA, A, lda, B, ldb, 1, C, ldc);
+#endif
 }
 
 void *gemm_nn_thrd(void *g_args){
+#ifdef CBLAS
     gemm_args g = *(gemm_args *)g_args;
     cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
         g.M, g.N, g.K, g.ALPHA , g.A, g.lda, g.B, g.ldb, 1, g.C, g.ldc);
+#endif
     return 0;
 }
 void gemm_nn_hetero(int M, int N, int K, float ALPHA, 
