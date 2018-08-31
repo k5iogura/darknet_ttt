@@ -11,7 +11,9 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef CBLAS
 #include <cblas.h>
+#endif
 #include "common_types.h"
 #include "data_reshape.h"
 #include "utils.h"
@@ -32,7 +34,9 @@ void MatrixShiftAdd(float *base_mat,
   if (row_shift == 0 && col_shift == 0 && (base_no_rows == ov_no_rows) &&
       (base_no_cols == ov_no_cols)) {
     // normal matrix add
+#ifdef CBLAS
     cblas_saxpy(base_no_rows * base_no_cols, 1.0, overlap_mat, 1, base_mat, 1);
+#endif
     return;
   }
   int rows_to_add, cols_to_add;
@@ -61,8 +65,10 @@ void MatrixShiftAdd(float *base_mat,
   for (r = 0; r < rows_to_add; ++r) {
     int base_mat_offset = (r + base_row_start) * base_no_cols + base_col_start;
     int overlap_mat_offset = (r + ov_row_start) * ov_no_cols + ov_col_start;
+#ifdef CBLAS
     cblas_saxpy(cols_to_add, 1.0, overlap_mat + overlap_mat_offset, 1,
                 base_mat + base_mat_offset, 1);
+#endif
   }
 }
 
@@ -149,6 +155,7 @@ static void convolutional_layer_kn2row(convolutional_layer l, network net)
       int k = filt_dim.c;
       int n = in_dim.h * in_dim.w;
       // This is just 1x1 convolution
+#ifdef CBLAS
       cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
                   m, n, k, alpha,
                   kkmc_filters + group_no * m * k,  //A
@@ -156,6 +163,7 @@ static void convolutional_layer_kn2row(convolutional_layer l, network net)
                   n, beta,
                   gemm_output,                      //C
                   n);
+#endif
       // Slide the resulting matrix which has contribution from one of the
       // KxK kernel coefficients and add to the output.
       for (omap = 0; omap < filt_dim.n; omap++) {
