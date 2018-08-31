@@ -5,7 +5,7 @@
 
 #ifdef OPENCV
 #include "sdl_image.h"
-#include <highgui.h>
+//#include <highgui.h>
 extern IplImage* cvQF_src;
 #endif
 
@@ -1161,7 +1161,7 @@ void demo_classifier(char *datacfg, char *cfgfile, char *weightfile, int cam_ind
 #ifdef SDL2
     sdlDestroyAllWindows();
 #else
-    cvDestoryAllWindows();
+    //cvDestoryAllWindows();
 #endif
 #endif
 }
