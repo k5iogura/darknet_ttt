@@ -61,7 +61,9 @@ WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 //#include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
+#ifdef CBLAS
 #include <cblas.h>
+#endif
 #include "utils.h"
 
 static inline int floor_divide(int a, int b) {
