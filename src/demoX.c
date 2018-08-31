@@ -11,7 +11,7 @@
 
 #define DEMO 1
 
-#ifdef OPENCV
+//#ifdef OPENCV
 
 static char **demo_names;
 static image **demo_alphabet;
@@ -147,7 +147,7 @@ static void *display_in_threadX(void *ptr)
     image display = buff[(buff_index+2) % 3];
     draw_detections(display, demo_detections, demo_thresh, boxes, probs, 0, demo_names, demo_alphabet, demo_classes);
     show_image_cv(buff[(buff_index + 1)%3], "Demo", ipl);
-    int c = cvWaitKey(1);
+    int c = cvWaitKey(10);
     if (c != -1) c = c%256;
     if (c == 27) {
         demo_done = 1;
@@ -276,7 +276,8 @@ void demoX(char *cfgfile, char *weightfile, float thresh, int cam_index, const c
             cvMoveWindow("Demo", 100, 100);
             //cvResizeWindow("Demo", 1352, 1013);
             //cvResizeWindow("Demo", 224, 160);
-            cvResizeWindow("Demo", 640, 480);
+            //cvResizeWindow("Demo", 640, 480);
+            cvResizeWindow("Demo", 320, 240);
         }
     }
 
@@ -296,10 +297,10 @@ void demoX(char *cfgfile, char *weightfile, float thresh, int cam_index, const c
     pthread_join(movie_thread, 0);
 }
 
-#else
-void demoX(char *cfgfile, char *weightfile, float thresh, int cam_index, const char *filename, char **names, int classes, int delay, char *prefix, int avg, float hier, int w, int h, int frames, int fullscreen)
-{
-    fprintf(stderr, "Demo needs OpenCV for webcam images.\n");
-}
-#endif
+//#else
+//void demoX(char *cfgfile, char *weightfile, float thresh, int cam_index, const char *filename, char **names, int classes, int delay, char *prefix, int avg, float hier, int w, int h, int frames, int fullscreen)
+//{
+    //fprintf(stderr, "Demo needs OpenCV for webcam images.\n");
+//}
+//#endif
 

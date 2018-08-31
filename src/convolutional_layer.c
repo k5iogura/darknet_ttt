@@ -8,7 +8,9 @@
 #include <stdio.h>
 #include <time.h>
 
+#ifdef CBLAS
 #include <cblas.h>
+#endif
 #include "im2row.h"
 #include "common_types.h"
 
@@ -472,6 +474,7 @@ void resize_convolutional_layer(convolutional_layer *l, int w, int h)
 //
 void add_bias_cblas(float *output, float *biases, int batch, int n, int size)   //add
 {
+#ifdef CBLAS
     int i,b;
     for(b = 0; b < batch; ++b){
         for(i = 0; i < n; ++i){
@@ -481,6 +484,7 @@ void add_bias_cblas(float *output, float *biases, int batch, int n, int size)   
             cblas_saxpy(size, 1, biases+i, 1, output+(b*n+i)*size, 1);
         }
     }
+#endif
 }
 
 void add_bias(float *output, float *biases, int batch, int n, int size)
@@ -576,9 +580,11 @@ void normalize_weights(layer l, float *weights){
 }
 
 void col2row_cblas(int sz_col, int sz_row, float* colm_src, float* rowm_dst){
+#ifdef CBLAS
     int r;
     for(r=0; r<sz_row; r++)
         cblas_scopy(sz_col, colm_src+r, sz_row, rowm_dst+r*sz_col, 1);
+#endif
 }
 
 void row2col_major(int sz_col, int sz_row, float *rowm_src, float *rowm_dst){
@@ -645,7 +651,9 @@ void forward_convolutional_layer_hf(convolutional_layer l, network net)
     double time=what_time_is_it_now();
 
     //copy_cpu(l.outputs*l.batch, l.biased_output, 1, l.output, 1);
+#ifdef CBLAS
     cblas_scopy(l.outputs*l.batch, l.biased_output, 1, l.output, 1);
+#endif
 #ifdef OPENEXR
     for(i=0;i<l.outputs*l.batch;i++) l.output_hf[i]=l.biased_output[i];
 #endif
@@ -730,7 +738,7 @@ void forward_convolutional_layer_hf(convolutional_layer l, network net)
         //gemm2(1,1,1, m, n, k, 1, a, m, b, k, 1, c, m);     //OK for instead of FPGA Model
         gemm2(0,1,1, m, n, k, 1, A, k, b, k, 1, c, m);     //OK for instead of FPGA Model
         free(A);
-    }else if(1){ // All OpenBLAS
+    }else if(0){ // All OpenBLAS
             float *a = net.workspace;
             float *b = l.weights;
             float *c = l.output;
@@ -738,7 +746,9 @@ void forward_convolutional_layer_hf(convolutional_layer l, network net)
             TensorDim filt_dim={ l.out_c, l.c, l.size, l.size };
             CppConvnetIm2Row(a, net.input, out_w, out_h, k, in_dim, filt_dim, l.stride, l.pad);
        //     printf("%9.6f ", what_time_is_it_now()-time);
+#ifdef CBLAS
             cblas_sgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, m, n, k, 1, a, m, b, k, 1, c, m); //OK
+#endif
     }else if(1){ // with FPGA Model for gemm_ntt.cl and gemm_ntt_jik.cl and gemm_ntt_jikK.cl
 #ifdef OPENEXR
         //if(net.index==0 || net.index==2){
@@ -750,7 +760,9 @@ void forward_convolutional_layer_hf(convolutional_layer l, network net)
             TensorDim filt_dim={ l.out_c, l.c, l.size, l.size };
             CppConvnetIm2Row(a, net.input, out_w, out_h, k, in_dim, filt_dim, l.stride, l.pad);
             printf("%9.6f ", what_time_is_it_now()-time);
+#ifdef CBLAS
             cblas_sgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, m, n, k, 1, a, m, b, k, 1, c, m); //OK
+#endif
         }else if(0){    // run with budget btwn cblas and gemm_ntt_jikK.cl
             int N1 = n/16, N2 = n-N1;
             float *a = net.workspace;
@@ -768,7 +780,9 @@ void forward_convolutional_layer_hf(convolutional_layer l, network net)
             printf("%9.6f ", what_time_is_it_now()-time);
             set_Nonblocking_launch();
             gemm_hf(0,1,1, m, N1, k, 1, a_hf, k, b_hf, k, 1, c_hf, m);     //OK for instead of FPGA Model
+#ifdef CBLAS
             cblas_sgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, m, N2, k, 1, a, m, b+N1*k, k, 1, c+N1*m, m); //OK
+#endif
             wait_kernel_finish();
             half2float(m*N1, c_hf, 1, c, 1);
             free(A);
@@ -815,7 +829,9 @@ void forward_convolutional_layer_foldBN(convolutional_layer l, network net)
     double time=what_time_is_it_now();
 
     //copy_cpu(l.outputs*l.batch, l.biased_output, 1, l.output, 1);
+#ifdef CBLAS
     cblas_scopy(l.outputs*l.batch, l.biased_output, 1, l.output, 1);
+#endif
 
     // with im2col version
     int m = l.n;
@@ -828,7 +844,9 @@ void forward_convolutional_layer_foldBN(convolutional_layer l, network net)
 
         im2col_cpu(net.input, l.c, l.h, l.w, l.size, l.stride, l.pad, b);
         printf("%9.6f ", what_time_is_it_now()-time);
+#ifdef CBLAS
         cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, m, n, k, 1, a, k, b, n, 1, c, n); //OK
+#endif
         //gemm2(0, 0, 0, m, n, k, 1, a, k, b, n, 1, c, n);    //OK
     }else if(0){ // with FPGA Model
         float *a = l.weights;
@@ -852,7 +870,9 @@ void forward_convolutional_layer_foldBN(convolutional_layer l, network net)
         TensorDim filt_dim={ l.out_c, l.c, l.size, l.size };
         CppConvnetIm2Row(a, net.input, out_w, out_h, k, in_dim, filt_dim, l.stride, l.pad);
         printf("%9.6f ", what_time_is_it_now()-time);
+#ifdef CBLAS
         cblas_sgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, m, n, k, 1, a, m, b, k, 1, c, m); //OK
+#endif
     }else if(0){ // with FPGA Model
         float *a = net.workspace;
         float *b = l.weights;
