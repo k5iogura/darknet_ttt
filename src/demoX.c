@@ -210,7 +210,14 @@ void demoX(char *cfgfile, char *weightfile, float thresh, int cam_index, const c
     demo_classes = classes;
     demo_thresh = thresh;
     demo_hier = hier;
-    printf("DemoX\n");
+    printf("******************************\n");
+    printf("** Darknet_ttt: DemoX v.1.0 **\n");
+    printf("** AOCX :gemm_ntt_jikK.aocx **\n");
+    printf("** .CL  :gemm_ntt_jikK.cl   **\n");
+    printf("** ttt5_224_160.cfg model   **\n");
+    printf("** fp16 on ARM-gcc          **\n");
+    printf("** fold-batch-normalization **\n");
+    printf("******************************\n");
     net = parse_network_cfg(cfgfile);
     set_batch_network(&net, 1);
     if(weightfile){
@@ -278,6 +285,7 @@ void demoX(char *cfgfile, char *weightfile, float thresh, int cam_index, const c
             //cvResizeWindow("Demo", 224, 160);
             //cvResizeWindow("Demo", 640, 480);
             cvResizeWindow("Demo", 320, 240);
+            cvMoveWindow("Demo",0,0);
         }
     }
 
