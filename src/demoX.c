@@ -216,6 +216,7 @@ void demoX(char *cfgfile, char *weightfile, float thresh, int cam_index, const c
     printf("** .CL  :gemm_ntt_jikK.cl   **\n");
     printf("** ttt5_224_160.cfg model   **\n");
     printf("** fp16 on ARM-gcc          **\n");
+    printf("** im2row memory placement  **\n");
     printf("** fold-batch-normalization **\n");
     printf("******************************\n");
     net = parse_network_cfg(cfgfile);
