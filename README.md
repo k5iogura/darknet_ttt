@@ -4,26 +4,31 @@
 ### What's means "_ttt"
 Darknet is an open source neural network framework written in C and CUDA. Smallest YOLO model is called "tiny-yolo", but too large for my project. My project provide FPGA version YOLO with Altera-Cyclone-V-SoC.  
 So, I made "tiny-yolo" small, call "tiny-tiny-tiny-yolo".  
+[ttt5_224_160.cfg](https://github.com/k5iogura/darknet_ttt/blob/master/cfg/ttt5_224_160.cfg) means "tinny tiny tiny yolo revision.5 224x160 input image model(.cfg).
 
 ### depend on
-1. Altera-Cyclone-V-SoC DE10Nano board.  
-2. Intel SDK for FPGA 18.0  
-3. Linux kernel 3.18-ltsi.  
-4. OpenBLAS  
-5. arm-linux-gnueabihf-  
+1. Altera-Cyclone-V-SoC on [Terasic DE10Nano](https://www.terasic.com.tw/cgi-bin/page/archive.pl?Language=English&No=1046) board(Rev.C) and [BSP for Intel FPGA SDK OpenCL 16.1](https://www.terasic.com.tw/cgi-bin/page/archive.pl?Language=English&CategoryNo=205&No=1046&PartNo=4)  
+2. Intel FPGA SDK for OpenCL 18.0  
+3. [Linux kernel 3.18-ltsi](https://github.com/k5iogura/darknet_ttt)  
+4. [OpenBLAS](https://github.com/xianyi/OpenBLAS)  
+5. toolchain gcc (self-compiler included in sdcard.img)  
 
-### make and test
-Before making darknet_ttt, you have to make OpenBLAS,  
+### make darknet for ARM Cortex-A9 on DE10Nano
+DE10Nano can self-build by installed gcc, g++.  
+Before making darknet_ttt, you have to make OpenBLAS by self-build on DE10Nano,  
 $ git clone https://github.com/xianyi/OpenBLAS  
+$ cd OpenBLAS  
 $ make  
 $ make install
 
-On DE10Nano with OpenCL_BSP sdcard.img booting(this is console linux),  
+On DE10Nano with "BSP for Intel FPGA SDK OpenCL 16.1" sdcard.img for kernel booting (this is console linux),  
 $ git clone https://github.com/k5iogura/darknet_ttt  
 $ cd darknet_ttt  
 $ make -f Makefile.self
 
-for test,  
+### for test on DE10Nano,  
+Initialize OpenCL envinonment, set dynamic link library path and run prediction demo using 1shot picture or 1MB.MP4 or UVC Camera.
+
 $ cd ~
 $ . ./init_opencl.sh  
 $ export DISPLAY=(x11server IP):0  
@@ -38,6 +43,18 @@ $ ./darknet detect cfg/ttt5_224_160.cfg data/ttt/ttt5_224_160_final.whights data
 
 for MP4 Video bellow,  
 $ ./darknet detector demo cfg/voc.data cfg/ttt5_224_160.cfg data/ttt/ttt5_224_160_final.whights data/1mb.mp4
+
+finaly for UVC Camera bellow,  
+$ ./darknet detector demo cfg/voc.data cfg/ttt5_224_160.cfg data/ttt/ttt5_224_160_final.whights
+
+### training for Deep Neural Network (ttt5_224_160.cfg)
+pjreddie recomends ansemble training method for YOLO.  
+Ansemble Training derive good result of FP acuracy.
+
+We use nVIDIA tesla GPGPU to train.
+1. classification task by Imagenet data.
+2. object detection task by VOC data.  
+VOC2012 IoU is about 50%.
 
 ### our points
 1. For running tiny-yolo model on Cortex-A9, we need reducing floating point operations. So, we modify tiny-yolo model, input image size is 224x160, output feature map size is 7x5. And reduced convolutinal layers with minimum degraded  accuracy against original tiny-yolo model. 
