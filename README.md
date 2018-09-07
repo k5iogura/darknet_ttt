@@ -41,20 +41,21 @@ $ ./darknet detector demo cfg/voc.data cfg/ttt5_224_160.cfg data/ttt/ttt5_224_16
 2. For reducing traffic btw DDR and FPGA, use half float type ieee-754-2008. This is supported by gcc for Cortex-A9 by -mfp16-format=ieee -mfpu=neon-fp16 options.  To make darknet_ttt for intel CPU, we need "half" class of OpenEXR library and g++ compiler because gcc for intel processor does not support half floating format and OpenEXR library is written by C++ language.
 3. For speed up prediction, use gemm by OpenCL optimization and BLAS CPU optimized library.
 4. For speed up visibility, split Camera process and prediction process into 2threads. Camera View is infinity loop, camera view loop and prediction loop are asynchronus. By using mutex, 2loops is synchronizing only at time of send/recieve image and prediction result btn themself. 
+5. We use X11 client(from OpenCV) to show result of the prediction on input image. So, We need X11 server at our demonstration. DE10Nano has HDMI output port on Board. But to use HDMI port, corresponding to IP-Module for FPGA Fabric has to be impliment in FPGA Fabric. We give up using HDMI port because DE10Nano FPGA Fabric is full by OpenCL gemm for Neural Network. 
 
 ### network convolution layer structure
 
 
 |No|Filter|size|input|output|  
 |----------:|----------:|----------:|----------:|  
-|0:conv |16 |3x3x1|224x160x3|224x160x16|  
-|2:conv |32 |3x3x1|112x80x16|112x80x32 |  
-|4:conv |128|3x3x1|28x20x32 |28x20x128 |  
-|6:conv |512|3x3x1|7x5x128  |7x5x512   |  
-|7:conv |512|3x3x1|7x5x512  |7x5x512   |  
-|8:conv |256|3x3x1|7x5x512  |7x5x256   |  
-|9:conv |512|3x3x1|7x5x256  |7x5x512   |  
-|10:conv|125|3x3x1|7x5x512  |7x5x125   |  
+|0 conv |16 |3x3x1|224x160x3|224x160x16|  
+|2 conv |32 |3x3x1|112x80x16|112x80x32 |  
+|4 conv |128|3x3x1|28x20x32 |28x20x128 |  
+|6 conv |512|3x3x1|7x5x128  |7x5x512   |  
+|7 conv |512|3x3x1|7x5x512  |7x5x512   |  
+|8 conv |256|3x3x1|7x5x512  |7x5x256   |  
+|9 conv |512|3x3x1|7x5x256  |7x5x512   |  
+|10 conv|125|3x3x1|7x5x512  |7x5x125   |  
 
 
 no.1, 3, 5 are muxpooling to down sampling.
