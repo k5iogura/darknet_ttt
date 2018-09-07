@@ -39,7 +39,7 @@ $ ./darknet detect cfg/ttt5_224_160.cfg data/ttt/ttt5_224_160_final.whights data
 for MP4 Video bellow,  
 $ ./darknet detector demo cfg/voc.data cfg/ttt5_224_160.cfg data/ttt/ttt5_224_160_final.whights data/1mb.mp4
 
-### points
+### our points
 1. For running tiny-yolo model on Cortex-A9, we need reducing floating point operations. So, we modify tiny-yolo model, input image size is 224x160, output feature map size is 7x5. And reduced convolutinal layers with minimum degraded  accuracy against original tiny-yolo model. 
 2. For reducing traffic btw DDR and FPGA, use half float type ieee-754-2008. This is supported by gcc for Cortex-A9 by -mfp16-format=ieee -mfpu=neon-fp16 options.  To make darknet_ttt for intel CPU, we need "half" class of OpenEXR library and g++ compiler because gcc for intel processor does not support half floating format and OpenEXR library is written by C++ language.
 3. For speed up prediction, use gemm by OpenCL optimization and BLAS CPU optimized library.
