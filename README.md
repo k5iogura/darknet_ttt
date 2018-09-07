@@ -44,6 +44,7 @@ $ ./darknet detector demo cfg/voc.data cfg/ttt5_224_160.cfg data/ttt/ttt5_224_16
 
 ### network convolution layer structure
 
+
 |No|Filter|size|input|output|
 |----------:|----------:|----------:|----------:|
 |0:conv |16 |3x3x1|224x160x3|224x160x16|
@@ -54,6 +55,7 @@ $ ./darknet detector demo cfg/voc.data cfg/ttt5_224_160.cfg data/ttt/ttt5_224_16
 |8:conv |256|3x3x1|7x5x512  |7x5x256   |
 |9:conv |512|3x3x1|7x5x256  |7x5x512   |
 |10:conv|125|3x3x1|7x5x512  |7x5x125   |
+
 
 no.1, 3, 5 are muxpooling to down sampling.
 ### Reference for original
