@@ -33,7 +33,7 @@ Execution flow are, initialize OpenCL runtime and insmod aclsoc_drv.ko, set dyna
 
 $ cd ~
 $ . ./init_opencl.sh  
-$ export DISPLAY=(x11server IP):0  
+$ export DISPLAY=(x11 server IP address):0  
 $ export LD_LIBRARY_PATH=/home/root/opencl_arm32_rte/host/arm32/lib:/usr/local/lib/:/opt/OpenBLAS/lib/  
 $ ./darknet  
 usage: ./darknet <function  
