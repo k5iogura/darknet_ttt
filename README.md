@@ -26,14 +26,17 @@ $ make -f Makefile.self
 for test,  
 $ cd ~
 $ . ./init_opencl.sh  
+$ export DISPLAY=(x11server IP):0  
 $ export LD_LIBRARY_PATH=/home/root/opencl_arm32_rte/host/arm32/lib:/usr/local/lib/:/opt/OpenBLAS/lib/  
 $ ./darknet  
 usage: ./darknet <function  
 $ ./darknet detect cfg/ttt5_224_160.cfg data/ttt/ttt5_224_160_final.whights data/dog.jpg  
 ***
-![running console and output image](files/detect_1file.jpeg)  
+![running console and output image](files/detect_1file.jpeg)
+
 ***
-For MP4 Video bellow,  
+
+for MP4 Video bellow,  
 $ ./darknet detector demo cfg/voc.data cfg/ttt5_224_160.cfg data/ttt/ttt5_224_160_final.whights data/1mb.mp4
 
 ### points
