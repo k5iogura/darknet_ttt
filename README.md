@@ -42,7 +42,7 @@ $ ./darknet detect cfg/ttt5_224_160.cfg data/ttt/ttt5_224_160_final.whights data
 ***  
 *result of prediction about 1shot jpeg picture.*
 ![running console and output image](files/detect_1file.jpeg)
-
+*ttt5_224_160.cfg can predict only BYCYCLE without DOG ;-P)*
 ***
 
 for MP4 Video bellow,  
