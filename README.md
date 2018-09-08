@@ -9,7 +9,7 @@ So, I made "tiny-yolo" more small, We are called it "tiny-tiny-tiny-yolo(_ttt)".
 ### depend on
 1. Altera-Cyclone-V-SoC on [Terasic DE10Nano](https://www.terasic.com.tw/cgi-bin/page/archive.pl?Language=English&No=1046) board(Rev.C) and [BSP for Intel FPGA SDK OpenCL 16.1](https://www.terasic.com.tw/cgi-bin/page/archive.pl?Language=English&CategoryNo=205&No=1046&PartNo=4)  
 2. Intel FPGA SDK for OpenCL 18.0  
-3. [Linux kernel 3.18-ltsi](https://github.com/k5iogura/darknet_ttt)  
+3. [Linux kernel 3.18-ltsi](https://github.com/k5iogura/thinkoco-linux-socfpga)  
 4. [OpenBLAS](https://github.com/xianyi/OpenBLAS)  
 5. toolchain gcc (self-compiler included in sdcard.img)  
 
