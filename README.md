@@ -67,7 +67,7 @@ ttt5_224_160.cfg perform VOC2012 IoU accuracy about 50% mAP([Officially tiny-YOL
 4. For speed up visibility, split Camera process and prediction process into 2threads. Camera View is infinity loop, camera view loop and prediction loop are asynchronus. By using mutex, 2loops is synchronizing only at time of send/recieve image and prediction result btn themself. 
 5. We use X11 client(from OpenCV) to show result of the prediction on input image. So, We need X11 server at our demonstration. DE10Nano has HDMI output port on Board. But to use HDMI port, corresponding to IP-Module for FPGA Fabric has to be impliment in FPGA Fabric. We give up using HDMI port because DE10Nano FPGA Fabric is full by OpenCL gemm for Neural Network. 
 
-### network convolution layer structure
+### ttt5_224_160.cfg network convolution layer structure 
 
 |No|Filter|size|input|output|  
 |-:|-:|-:|-:|-:|
