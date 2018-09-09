@@ -1,4 +1,4 @@
-![](files/darknet.png)
+![](darknet.png)
 ***
 
 # tiny-tiny-tiny-yolo model(ttt5_224_160.cfg) training method  
@@ -12,6 +12,12 @@ bash
 python2.x(>2.7)  
 opencv-python binding(ex. yum install -y opencv-python)  
 wget command  
+[darknet_sdl](https://github.com/k5iogura/darknet_sdl) or [darknet](https://pjreddie.com/darknet/yolov2/)    
+
+### Why not darknet_ttt, Why darknet_sdl?
+[darknet_ttt](https://github.com/k5iogura/darknet_ttt) for ttt5_224_160.cfg framework is dedicaded only for forwarding prediction. We modify darknet_sdl because to use FPGA as GEMM.  Slo, backwarding process is not maintenanced.  
+Therefore for training process, we have to use [darknet_sdl](https://github.com/k5iogura/darknet_sdl) or [original darknet](https://pjreddie.com/darknet/yolov2/) framework.  
+In this time, we are using [darknet_sdl](https://github.com/k5iogura/darknet_sdl) framework in bellow works.  
 
 ## classification task by imagenet
 
@@ -27,6 +33,11 @@ Images downloading from intenet takes a long time, **few days**.
 ### run classification training
 
 After long time, image downloading is done.  
+For training process, we have to git clone [darknet_sdl](https://github.com/k5iogura/darknet_sdl).  
+
+$ git clone https://github.com/k5iogura/darknet_sdl  
+$ cd darknet_sdl  
+
 Next is to create darknet control card(cfg/*.data) like belllow,  
 $ cat classifier_500c.data  
 classes=500  
