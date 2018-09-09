@@ -70,7 +70,7 @@ ttt5_224_160.cfg perform VOC2012 IoU accuracy about 50% mAP([Officially tiny-YOL
 ### network convolution layer structure
 
 |No|Filter|size|input|output|  
-|-:|-:|-:|-:|  
+|-:|-:|-:|-:|-:|
 |0 conv |16|3x3x1|224x160x3|224x160x16|  
 |2 conv |32|3x3x1|112x80x16|112x80x32|  
 |4 conv |128|3x3x1|28x20x32|28x20x128|  
