@@ -53,7 +53,8 @@ $ ./darknet detector demo cfg/voc.data cfg/ttt5_224_160.cfg data/ttt/ttt5_224_16
 
 ### training for Deep Neural Network (ttt5_224_160.cfg)
 [pjreddie](https://pjreddie.com/darknet/yolov2/) recomends ensemble training method for YOLO.  
-Ensemble Training perform good result of FP acuracy.
+Ensemble Training perform good result of FP acuracy.  
+Our training details can be sean in [Here](files/training_ttt5_224_160_model.md).
 
 We use nVIDIA tesla GPGPU to train.
 1. classification task by Imagenet data.
