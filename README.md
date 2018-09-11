@@ -28,6 +28,18 @@ $ cd darknet_ttt
 $ make -f Makefile.self  
 You get darknet executable.
 
+### make FPGA Bitstream gemm_fpga.aocx  
+We compile(aoc) ```gemm_ntt_jikK.aocx``` by Inter FPGA SDK for OpenCL from ```ocl/gemm_ntt_jikK.cl``` OpenCL kernel discription.  
+Here, about the generic matrix operation C = A * B,  
+```_ntt_``` means that Matrix A is rowmajor, B and C are colmajor.  
+```_jik```  means loop order.  
+```K```     means K-line Buffer.
+
+Using ```gemm_ntt_jikK.cl``` and altera OpenCL compiler ```aoc```, issu bellow,  
+$ aoc -fpc -fp-relaxed -v -report ocl/gemm_ntt_jikK.cl -o gemm_fpga.aocx  
+```-fp-relaxed``` option performed good speedy GEMM operator on FPGA.  
+We can get gemm_fpga.aocx as FPGA Bitstream file. Our darknet_ttt framework reads this Bitstream and reprogram FPGA Fabric at the first of process.  
+
 ### for test on DE10Nano,  
 Execution flow are, initialize OpenCL runtime and insmod aclsoc_drv.ko, set dynamic link library path and run darknet prediction demo using 1shot picture or 1MB.MP4 or UVC Camera.  Result is in X11 Window on X11 server display.
 
@@ -67,6 +79,8 @@ ttt5_224_160.cfg perform VOC2012 IoU accuracy about 50% mAP([Officially tiny-YOL
 3. For speed up prediction, use gemm by OpenCL optimization and BLAS CPU optimized library.
 4. For speed up visibility, split Camera process and prediction process into 2threads. Camera View is infinity loop, camera view loop and prediction loop are asynchronus. By using mutex, 2loops is synchronizing only at time of send/recieve image and prediction result btn themself. 
 5. We use X11 client(from OpenCV) to show result of the prediction on input image. So, We need X11 server at our demonstration. DE10Nano has HDMI output port on Board. But to use HDMI port, corresponding to IP-Module for FPGA Fabric has to be impliment in FPGA Fabric. We give up using HDMI port because DE10Nano FPGA Fabric is full by OpenCL gemm for Neural Network. 
+6. im2col is generic method to dup and copy input image for generic matrix multipier.  This has been tested from long time ago. But, we don't use this method. Instead of im2col, we use im2row method because im2row perform good efficiencies of GEMM operator.  Original im2row ideas in [this area](https://github.com/k5iogura/convolution-flavors).  
+7. We use the idea of [folding technique](http://cs231n.stanford.edu/reports/2017/pdfs/135.pdf).  
 
 ### ttt5_224_160.cfg network convolution layer structure 
 
