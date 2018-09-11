@@ -14,6 +14,7 @@ So, I made "tiny-yolo" more small, We are called it "tiny-tiny-tiny-yolo(_ttt)".
 5. toolchain gcc (self-compiler included in sdcard.img)  
 
 ### make darknet for ARM Cortex-A9 on DE10Nano
+***
 DE10Nano can self-build by installed gcc, g++.  
 Before making darknet_ttt, you have to make OpenBLAS by self-build on DE10Nano,  
 $ git clone https://github.com/xianyi/OpenBLAS  
@@ -29,6 +30,7 @@ $ make -f Makefile.self
 You get darknet executable.
 
 ### make FPGA Bitstream gemm_fpga.aocx  
+***
 We compile(aoc) ```gemm_ntt_jikK.aocx``` by Inter FPGA SDK for OpenCL from ```ocl/gemm_ntt_jikK.cl``` OpenCL kernel discription.  
 Here, about the generic matrix operation C = A * B,  
 ```_ntt_``` means that Matrix A is rowmajor, B and C are colmajor.  
@@ -52,8 +54,8 @@ usage: ./darknet <function
 $ ./darknet detect cfg/ttt5_224_160.cfg data/ttt/ttt5_224_160_final.whights data/dog.jpg
 
 ***  
-*result of prediction about 1shot jpeg picture.*
-![running console and output image](files/detect_1file.jpeg)
+*result of prediction about 1shot jpeg picture.*  
+![running console and output image](files/detect_1file.jpeg)  
 *ttt5_224_160.cfg can predict only BYCYCLE without DOG ;-P)*
 ***
 
@@ -73,7 +75,8 @@ We use nVIDIA tesla GPGPU to train.
 2. object detection task by VOC data.  
 ttt5_224_160.cfg perform VOC2012 IoU accuracy about 50% mAP([Officially tiny-YOLO is 57.1% mAP about VOC2007+2012](https://pjreddie.com/darknet/yolov2/)).
 
-### our points
+### Our points
+***
 1. For running tiny-yolo model on Cortex-A9, we need reducing floating point operations. So, we modify tiny-yolo model, input image size is 224x160, output feature map size is 7x5. And reduced convolutinal layers with minimum degraded  accuracy against original tiny-yolo model. 
 2. For reducing traffic btw DDR and FPGA, use half float type ieee-754-2008. This is supported by gcc for Cortex-A9 by -mfp16-format=ieee -mfpu=neon-fp16 options.  To make darknet_ttt for intel CPU, we need "half" class of OpenEXR library and g++ compiler because gcc for intel processor does not support half floating format and OpenEXR library is written by C++ language.
 3. For speed up prediction, use gemm by OpenCL optimization and BLAS CPU optimized library.
@@ -99,9 +102,27 @@ using General Matrix Multiplication](https://arxiv.org/pdf/1704.04428.pdf) and c
 no.1, 3, 5 are muxpooling to down sampling.  
 
 ### DEMO set structure and result
-We made DEMO set using ttt5_224_160.cfg forwarding model and using X11server as result viewer.  Forwarding process on DE10Nano(Cyclone-V-SoC), X11server on DE0Nano(Cyclone-V-SoC), connect ethernet of both Cyclone-V-SoC boards, and run!.  We can get about 5FPS of prediction speed of 20class object detection task.  We think it's slow, but OpenCL GEMM on Cyclone-V is low power than GPGPU, we can run this DEMO with handy buttery(for iPad:-).  If you wanna be speedup, then you may use HDL and redesign whole DNN pipeline.  Notice, you should think that the access from Cyclone-V-SoC FPGA Fabric to DDR3 memory is slow. It is major reason of process speeddown.  We think that GEMM Fabric operation with OpenCL may be fast.  
+***
+
+We made DEMO set using ttt5_224_160.cfg forwarding model and using X11server as result viewer.  Forwarding process on DE10Nano(Cyclone-V-SoC), X11server on DE0Nano(Cyclone-V-SoC), connect ethernet of both Cyclone-V-SoC boards, and run!.  We can get about ```5FPS``` of prediction speed of 20 classes object detection task.  We think it's slow, but OpenCL GEMM on Cyclone-V is low power than GPGPU, we can run this DEMO with handy buttery(for iPad:-).  If you wanna be speedup, then you may use HDL and redesign whole DNN pipeline.  Notice, you should think that the access from Cyclone-V-SoC FPGA Fabric to DDR3 memory is slow. It is major reason of process speeddown.  We think that GEMM Fabric operation with OpenCL may be fast.  
+
+### Structure
+
+For Demo system, we are using 2 Cyclone-V-SoC Boards DE10Nano and DE0Nano.  DE10Nano is in object detection task with FPGA, DE0Nano is in X11 Server with Cortex A9. Relation btn IPaddress are bellow,    
+
+|USB Cam|DE10Nano|ether|DE0Nano|LCD|
+|:-|-|-:|-|-:|
+|>Cable=>|192.168.138.2|====>|192.168.137.100|Arduino UNO-IF|
+|10cm|Object Detection||X11 server|2.8"|
+
+We have 4-Cortex-A9 CPU and 2-FPGA Fabric. 4-Cortex-A9 are in run darknet framework, USB Camera Interface, X11 server. 2-FPGA Fabric are in GEMM kernel, altvip.  We have mergin in Fabric area and CPU Power, but feature of this Demo system is low power, so we don't use all capability.  
+
+### Reason why 2 boards needed
+DE10Nano FPGA Fabric is in 2-GEMM kernels in object detection. First one is 7xN GEMM, second one 16xN GEMM, N is variable for Convolutinal Layer structure, ex. N=3~32.  We can not combine into one kernel for speed damage.  
 
 ### Reference for original
+***
+
 For more information see the [Darknet project website](http://pjreddie.com/darknet).
 
 For questions or issues please use the [Google Group](https://groups.google.com/forum/#!forum/darknet).
