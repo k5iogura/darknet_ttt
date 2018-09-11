@@ -101,6 +101,7 @@ no.1, 3, 5 are muxpooling to down sampling.
 ### DEMO set structure and result
 We made DEMO set using ttt5_224_160.cfg forwarding model and using X11server as result viewer.  Forwarding process on DE10Nano(Cyclone-V-SoC), X11server on DE0Nano(Cyclone-V-SoC), connect ethernet of both Cyclone-V-SoC boards, and run!.  We can get about 5FPS of prediction speed of 20class object detection task.  We think it's slow, but OpenCL GEMM on Cyclone-V is low power than GPGPU, we can run this DEMO with handy buttery(for iPad:-).  If you wanna be speedup, then you may use HDL and redesign whole DNN pipeline.  Notice, you should think that the access from Cyclone-V-SoC FPGA Fabric to DDR3 memory is slow. It is major reason of process speeddown.  We think that GEMM Fabric operation with OpenCL may be fast.  
 
+![](files/DEMO_DE10NANO+DE0NANO.jpg)
 ### Reference for original
 For more information see the [Darknet project website](http://pjreddie.com/darknet).
 
