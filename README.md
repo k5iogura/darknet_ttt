@@ -79,8 +79,9 @@ ttt5_224_160.cfg perform VOC2012 IoU accuracy about 50% mAP([Officially tiny-YOL
 3. For speed up prediction, use gemm by OpenCL optimization and BLAS CPU optimized library.
 4. For speed up visibility, split Camera process and prediction process into 2threads. Camera View is infinity loop, camera view loop and prediction loop are asynchronus. By using mutex, 2loops is synchronizing only at time of send/recieve image and prediction result btn themself. 
 5. We use X11 client(from OpenCV) to show result of the prediction on input image. So, We need X11 server at our demonstration. DE10Nano has HDMI output port on Board. But to use HDMI port, corresponding to IP-Module for FPGA Fabric has to be impliment in FPGA Fabric. We give up using HDMI port because DE10Nano FPGA Fabric is full by OpenCL gemm for Neural Network. 
-6. im2col is generic method to dup and copy input image for generic matrix multipier.  This has been tested from long time ago. But, we don't use this method. Instead of im2col, we use im2row method because im2row perform good efficiencies of GEMM operator.  Original im2row ideas in [this area](https://github.com/k5iogura/convolution-flavors).  
-7. We use the idea of [folding technique](http://cs231n.stanford.edu/reports/2017/pdfs/135.pdf).  
+6. im2col is generic method to reconstruct input image for suitable formula of generic matrix multiplier.  This has been tested from long time ago. But, we don't use this method. Instead of im2col, we use im2row method because im2row perform good efficiencies of GEMM operator.  Original im2row ideas is in [Parallel Multi Channel Convolution
+using General Matrix Multiplication](https://arxiv.org/pdf/1704.04428.pdf) and code is on [this area](https://github.com/k5iogura/convolution-flavors).  
+7. We use the idea of [folding technique](http://machinethink.net/blog/object-detection-with-yolo/).  By this technique(needing little modification of method for darknet), we can decrease the number of SqureRoot and floating point division at forwarding process.  
 
 ### ttt5_224_160.cfg network convolution layer structure 
 
@@ -95,7 +96,11 @@ ttt5_224_160.cfg perform VOC2012 IoU accuracy about 50% mAP([Officially tiny-YOL
 |9 conv |512|3x3x1|7x5x256|7x5x512|  
 |10 conv|125|3x3x1|7x5x512|7x5x125|  
 
-no.1, 3, 5 are muxpooling to down sampling.
+no.1, 3, 5 are muxpooling to down sampling.  
+
+### DEMO set structure and result
+We made DEMO set using ttt5_224_160.cfg forwarding model and using X11server as result viewer.  Forwarding process on DE10Nano(Cyclone-V-SoC), X11server on DE0Nano(Cyclone-V-SoC), connect ethernet of both Cyclone-V-SoC boards, and run!.  We can get about 5FPS of prediction speed of 20class object detection task.  We think it's slow, but OpenCL GEMM on Cyclone-V is low power than GPGPU, we can run this DEMO with handy buttery(for iPad:-).  If you wanna be speedup, then you may use HDL and redesign whole DNN pipeline.  Notice, you should think that the access from Cyclone-V-SoC FPGA Fabric to DDR3 memory is slow. It is major reason of process speeddown.  We think that GEMM Fabric operation with OpenCL may be fast.  
+
 ### Reference for original
 For more information see the [Darknet project website](http://pjreddie.com/darknet).
 
