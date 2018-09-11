@@ -29,6 +29,8 @@ $ cd darknet_ttt
 $ make -f Makefile.self  
 You get darknet executable.
 
+Finaly, you need kernel reconfigure to use UVC Camera. You get linux-socfpga-3.18.0-ltsi kernel zImage with following [this area](https://github.com/k5iogura/thinkoco-linux-socfpga).
+
 ### make FPGA Bitstream gemm_fpga.aocx  
 ***
 We compile(aoc) ```gemm_ntt_jikK.aocx``` by Inter FPGA SDK for OpenCL from ```ocl/gemm_ntt_jikK.cl``` OpenCL kernel discription.  
