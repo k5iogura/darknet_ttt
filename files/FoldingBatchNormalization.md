@@ -30,6 +30,7 @@ factor[l] * out[j] = ΣΣ(factor[l] * w[k] * x[i+k])
 Here, w'[k]   = factor[l] * w[k]
       out'[j] = factor[l] * -means[l] + beta[l]
 
+Then,
 bn[j]  := ΣΣ(w'[k] * x[i+k]) + out'[j]
 
 ```
