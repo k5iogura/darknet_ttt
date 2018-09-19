@@ -86,7 +86,7 @@ ttt5_224_160.cfg perform VOC2012 IoU accuracy about 50% mAP([Officially tiny-YOL
 5. We use X11 client(from OpenCV) to show result of the prediction on input image. So, We need X11 server at our demonstration. DE10Nano has HDMI output port on Board. But to use HDMI port, corresponding to IP-Module for FPGA Fabric has to be impliment in FPGA Fabric. We give up using HDMI port because DE10Nano FPGA Fabric is full by OpenCL gemm for Neural Network. 
 6. im2col is generic method to reconstruct input image for suitable formula of generic matrix multiplier.  This has been tested from long time ago. But, we don't use this method. Instead of im2col, we use im2row method because im2row perform good efficiencies of GEMM operator.  Original im2row ideas is in [Parallel Multi Channel Convolution
 using General Matrix Multiplication](https://arxiv.org/pdf/1704.04428.pdf) and code is on [this area](https://github.com/k5iogura/convolution-flavors).  
-7. We use the idea of [folding technique](http://machinethink.net/blog/object-detection-with-yolo/).  By this technique(needing little modification of method for darknet), we can decrease the number of SqureRoot and floating point division at forwarding process.  
+7. We use the idea of [folding technique](http://machinethink.net/blog/object-detection-with-yolo/).  By this technique(needing little modification of method for darknet), we can decrease the number of SqureRoot and floating point division at forwarding process. Detail is [here](files/FoldingBatchNormalization.md)    
 
 ### ttt5_224_160.cfg network convolution layer structure 
 
