@@ -1,7 +1,7 @@
 ### Folding BatchNormalization ###
 
 YOLO uses forward_convolutional_layer with BatchNormalization method.  
-Detail is [here](http://machinethink.net/blog/object-detection-with-yolo/).  
+Original information is [here](http://machinethink.net/blog/object-detection-with-yolo/).  
 Points are, 
 
 ```
@@ -27,11 +27,11 @@ bn[j] := { factor[l] * out[j] } + { factor[l] * -mean[l] + beta[l] }
 
 factor[l] * out[j] = ΣΣ(factor[l] * w[k] * x[i+k])
 
-Here, w'[k]   = factor[l] * w[k]
-      out'[j] = factor[l] * -means[l] + beta[l]
+Here, w'[k]     = factor[l] * w[k]
+      beta'[l] += factor[l] * -means[l]
 
 Then,
-bn[j]  := ΣΣ(w'[k] * x[i+k]) + out'[j]
+bn[j]  := ΣΣ(w'[k] * x[i+k]) + beta'[j]
 
 ```
 At stating of calcuration, darknet reads weigts, gamma, variance and beta from saved files, and
@@ -39,7 +39,7 @@ At stating of calcuration, darknet reads weigts, gamma, variance and beta from s
 - [x] At last of convolution, beta[l] is added to result of sGEMM.
 
 "folding method" modifies normal darknet flow on bellow points,
-- [x] "folding method" initialize out[j] to out'[j],  
+- [x] "folding method" initialize out[j] to beta'[l],  
 - [x] weights are initialized to w'[k].  
 
 The gain of "folding" method is ``reducing number of sqrt and divsion floating point operations``.  
