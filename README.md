@@ -190,7 +190,14 @@ To automatically run our Demo system after linux boot, we setup "systemd" mechan
   
 ### Reference for original darknet project(pjreddie)
 ***
-
+```
+@misc{darknet13,
+  author =   {Joseph Redmon},
+  title =    {Darknet: Open Source Neural Networks in C},
+  howpublished = {\url{http://pjreddie.com/darknet/}},
+  year = {2013--2016}
+}
+```
 For more information see the [Darknet project website](http://pjreddie.com/darknet).
 
 For questions or issues please use the [Google Group](https://groups.google.com/forum/#!forum/darknet).
