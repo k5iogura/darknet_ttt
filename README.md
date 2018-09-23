@@ -127,7 +127,7 @@ To automatically run our Demo system after linux boot, we setup "systemd" mechan
 
 - service description, ex. autodemo.service
 ```
-  # cat autodemo.service
+  # cat /etc/systemd/system/autodemo.service
   [Unit]
   Description = Demo for Obect Detection
   After=local-fs.target
