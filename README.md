@@ -186,9 +186,9 @@ To automatically run our Demo system after linux boot, we setup "systemd" mechan
 ```
   # systemctl enable autodemo.serice
   # reboot
+```
   
-  
-### Reference for original
+### Reference for original darknet project(pjreddie)
 ***
 
 For more information see the [Darknet project website](http://pjreddie.com/darknet).
