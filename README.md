@@ -122,6 +122,71 @@ We have 4-Cortex-A9 CPU and 2-FPGA Fabric. 4-Cortex-A9 are in run darknet framew
 ### Reason why 2 boards needed
 DE10Nano FPGA Fabric is in 2-GEMM kernels in object detection. First one is 9xN GEMM, second one 16xM GEMM, N, M is variable for Convolutinal Layer structure, ex. N=3, M=16~32.  We can not combine into one kernel for speed damage.  
 
+### systemd setup
+To automatically run our Demo system after linux boot, we setup "systemd" mechanism as service because DE10Nano employ systemd mechanism instead of "init". But DE0Nano employ "init" mechanism.  
+
+- service description, ex. autodemo.service
+```
+  # cat autodemo.service
+  [Unit]
+  Description = Demo for Obect Detection
+  After=local-fs.target
+  ConditionPathExists=/opt/DEMO/bin
+
+  [Service]
+  ExecStart=/opt/DEMO/bin/autoexec.sh
+  Restart=no
+  Type=simple
+
+  [Install]
+  WantedBy=multi-user.target
+
+  # chown root:root /etc/systemd/system/autodemo.service
+  # chmod 644 /etc/systemd/system/autodemo.service
+```
+- command script for systemd service
+```
+  Here, we attempt that our darknet_ttt repository in /area51/darknetT3/ and intel FPGA Environment in /home/root/init_opencl.sh.  
+  And ip-address of DE10Nano as darknet is 192.168.137.2,  
+  ip-address of DE0Nano as X11 server ip-address is 192.168.137.100.
+  
+  # mkdir /opt/DEMO/bin
+  # chmod 755 /opt/DEMO/bin
+  # cat autoexec.sh
+    #!/bin/bash
+      /sbin/ifconfig eth0 192.168.137.2
+      cd /area51/darknetT3/
+      . /home/root/init_opencl.sh
+      export DISPLAY=192.168.137.100:0
+      /area51/darknetT3/darknet detector demo cfg/voc.data cfg/ttt5_224_160.cfg data/ttt/ttt5_224_160_final.weights
+
+  # chown root:root /opt/DEMO/bin/autoexec.sh
+  # chmod 755 /opt/DEMO/bin/autoexec.sh
+```
+- reload service
+```
+  # systemctl daemon-reload
+  # systemctl status autodemo.service
+   autodemo.service - Demo for Obect Detection
+   Loaded: loaded (/etc/systemd/system/autodemo.service; disabled; vendor preset: enabled)
+   Active: inactive (dead)
+  
+  Here, first disabled means autorun(at boot) on, next enabled means default.
+```
+- invoke our service
+```
+  # systemctl start autodemo.service
+   [ 3039.849125] eth0: device MAC address 0a:f2:06:26:a2:fd
+   ifc[ 3043.926463] stmmaceth ff702000.ethernet eth0: Link is Up - 1Gbps/Full - flow control off
+   
+  Here, still not autorun.
+```
+- autorun setup
+```
+  # systemctl enable autodemo.serice
+  # reboot
+  
+  
 ### Reference for original
 ***
 
