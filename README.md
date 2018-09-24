@@ -1,4 +1,4 @@
-![Darknet Logo](http://pjreddie.com/media/files/darknet-black-small.png)
+<img src="./files/Magic_formation.jpg" alt="logo" width="250"/>
 
 # darknet_ttt #
 ### What's means "_ttt"
