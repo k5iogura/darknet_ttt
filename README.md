@@ -1,4 +1,4 @@
-![Darknet Logo](files/Magic_formation.jpg)
+![Darknet Logo](files/Magic_formation.jpg =100x100)
 ![Darknet Logo](http://pjreddie.com/media/files/darknet-black-small.png)
 
 # darknet_ttt #
