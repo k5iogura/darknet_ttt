@@ -127,7 +127,7 @@ To automatically run our Demo system after linux boot, we setup "systemd" mechan
 
 - service description, ex. autodemo.service
 ```
-  # cat autodemo.service
+  # cat /etc/systemd/system/autodemo.service
   [Unit]
   Description = Demo for Obect Detection
   After=local-fs.target
@@ -146,7 +146,8 @@ To automatically run our Demo system after linux boot, we setup "systemd" mechan
 ```
 - command script for systemd service
 ```
-  Here, we attempt that our darknet_ttt repository in /area51/darknetT3/ and intel FPGA Environment in /home/root/init_opencl.sh.  
+  Here, we attempt that our darknet_ttt repository in /area51/darknetT3/  
+  and intel FPGA Environment in /home/root/init_opencl.sh.  
   And ip-address of DE10Nano as darknet is 192.168.137.2,  
   ip-address of DE0Nano as X11 server ip-address is 192.168.137.100.
   
@@ -173,7 +174,7 @@ To automatically run our Demo system after linux boot, we setup "systemd" mechan
   
   Here, first disabled means autorun(at boot) on, next enabled means default.
 ```
-- invoke our service
+- invoke our service temporary for testing
 ```
   # systemctl start autodemo.service
    [ 3039.849125] eth0: device MAC address 0a:f2:06:26:a2:fd
@@ -181,15 +182,22 @@ To automatically run our Demo system after linux boot, we setup "systemd" mechan
    
   Here, still not autorun.
 ```
-- autorun setup
+- setup autorun and start service after reboot
 ```
   # systemctl enable autodemo.serice
   # reboot
+```
   
-  
-### Reference for original
+### Reference for original darknet project(pjreddie)
 ***
-
+```
+@misc{darknet13,
+  author =   {Joseph Redmon},
+  title =    {Darknet: Open Source Neural Networks in C},
+  howpublished = {\url{http://pjreddie.com/darknet/}},
+  year = {2013--2016}
+}
+```
 For more information see the [Darknet project website](http://pjreddie.com/darknet).
 
 For questions or issues please use the [Google Group](https://groups.google.com/forum/#!forum/darknet).
