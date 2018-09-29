@@ -43,6 +43,7 @@ Using ```gemm_ntt_jikK.cl``` and altera OpenCL compiler ```aoc```, issu bellow,
 $ aoc -fpc -fp-relaxed -v -report ocl/gemm_ntt_jikK.cl -o gemm_fpga.aocx  
 ```-fp-relaxed``` option performed good speedy GEMM operator on FPGA.  
 We can get gemm_fpga.aocx as FPGA Bitstream file. Our darknet_ttt framework reads this Bitstream and reprogram FPGA Fabric at the first of process.  
+About algorithm of GEMM in FPGA is [here](./files/gemm_ntt_jikK.md).
 
 ### for test on DE10Nano,  
 Execution flow are, initialize OpenCL runtime and insmod aclsoc_drv.ko, set dynamic link library path and run darknet prediction demo using 1shot picture or 1MB.MP4 or UVC Camera.  Result is in X11 Window on X11 server display.
