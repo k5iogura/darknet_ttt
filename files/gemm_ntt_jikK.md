@@ -52,7 +52,7 @@ Generic im2col copies and expands image data into col-matrix(here, B).
 On our development, we use im2row function. Therefore B matrix as weights kernel matrix, A matrix is image expanded.
 
 ***Loop order is n, m, k***  
-In Naive GEMM function, loop order is m, n, k. But our implemetation use n,m,k to bufferring B column.
+In Naive GEMM function, loop order is m, k, n. But our implemetation use n,m,k to bufferr each B column.
 
 ***Using vloadn() OpenCL vector loading macro***  
 OpenCL has vector loading macro such as vload2, vload16, vload_half16.  
