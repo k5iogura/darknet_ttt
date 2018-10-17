@@ -74,8 +74,15 @@ Ensemble Training perform good result of FP acuracy.
 Our training details can be sean in [Here](files/training_ttt5_224_160_model.md).
 
 We use nVIDIA tesla GPGPU to train.
-1. classification task by Imagenet data.
+1. classification task by Imagenet data.  
+ttt5_pre.cfg classification accuracy with 500 category of ImageNet dataset are,   
+top-1 : 46.7%  
+top-5 : 71.5%  
+learning 141epoch  
+
 2. object detection task by VOC data.  
+Extract 7 layers weights from classification task's weights by darknet partial command.  
+Finetune object detection task with 7 layers weights.  
 ttt5_224_160.cfg perform VOC2012 IoU accuracy about 50% mAP([Officially tiny-YOLO is 57.1% mAP about VOC2007+2012](https://pjreddie.com/darknet/yolov2/)).
 
 ### Our points
