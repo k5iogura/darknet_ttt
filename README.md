@@ -29,7 +29,7 @@ $ cd darknet_ttt
 $ make -f Makefile.self  
 You get darknet executable.
 
-Finaly, you need kernel reconfigure to use UVC Camera. You get linux-socfpga-3.18.0-ltsi kernel zImage with following [this area](https://github.com/k5iogura/thinkoco-linux-socfpga).
+Finally, you need kernel reconfigure to use UVC Camera. You get linux-socfpga-3.18.0-ltsi kernel zImage with following [this area](https://github.com/k5iogura/thinkoco-linux-socfpga).
 
 ### make FPGA Bitstream gemm_fpga.aocx  
 ***
@@ -69,9 +69,9 @@ finaly for UVC Camera bellow,
 $ ./darknet detector demo cfg/voc.data cfg/ttt5_224_160.cfg data/ttt/ttt5_224_160_final.whights
 
 ### training for Deep Neural Network (ttt5_224_160.cfg)
-[pjreddie](https://pjreddie.com/darknet/yolov2/) recomends ensemble training method for YOLO.  
-Ensemble Training perform good result of FP acuracy.  
-Our training details can be sean in [Here](files/training_ttt5_224_160_model.md).
+[pjreddie](https://pjreddie.com/darknet/yolov2/) recommends ensemble training method for YOLO.  
+Ensemble Training perform good result of FP accuracy.  
+Our training details can be seen in [Here](files/training_ttt5_224_160_model.md).
 
 We use nVIDIA tesla GPGPU to train.
 1. classification task by Imagenet data.  
@@ -91,7 +91,7 @@ ttt5_224_160.cfg perform VOC2012 IoU accuracy about 50% mAP([Officially tiny-YOL
 2. For reducing traffic btw DDR and FPGA, use half float type ieee-754-2008. This is supported by gcc for Cortex-A9 by -mfp16-format=ieee -mfpu=neon-fp16 options.  To make darknet_ttt for intel CPU, we need "half" class of OpenEXR library and g++ compiler because gcc for intel processor does not support half floating format and OpenEXR library is written by C++ language.
 3. For speed up prediction, use gemm by OpenCL optimization and BLAS CPU optimized library.
 4. For speed up visibility, split Camera process and prediction process into 2threads. Camera View is infinity loop, camera view loop and prediction loop are asynchronus. By using mutex, 2loops is synchronizing only as of sending/recieving image and prediction result btn themself. 
-5. We use X11 client(from OpenCV) to show result of the prediction on input image. So, We need X11 server at our demonstration. DE10Nano has HDMI output port on Board. But to use HDMI port, corresponding to IP-Module for FPGA Fabric has to be impliment in FPGA Fabric. We give up using HDMI port because DE10Nano FPGA Fabric is full by OpenCL gemm for Neural Network. 
+5. We use X11 client(from OpenCV) to show result of the prediction on input image. So, We need X11 server at our demonstration. DE10Nano has HDMI output port on Board. But to use HDMI port, corresponding to IP-Module for FPGA Fabric has to be implemented in FPGA Fabric. We give up using HDMI port because DE10Nano FPGA Fabric is full by OpenCL gemm for Neural Network. 
 6. im2col is generic method to reconstruct input image for suitable formula of generic matrix multiplier.  This has been tested from long time ago. But, we don't use this method. Instead of im2col, we use im2row method because im2row perform good efficiencies of GEMM operator.  Original im2row ideas is in [Parallel Multi Channel Convolution
 using General Matrix Multiplication](https://arxiv.org/pdf/1704.04428.pdf) and code is on [this area](https://github.com/k5iogura/convolution-flavors).  
 7. We use the idea of [folding technique](http://machinethink.net/blog/object-detection-with-yolo/).  By this technique(needing little modification of method for darknet), we can decrease the number of SqureRoot and floating point division at forwarding process. Detail is [here](files/FoldingBatchNormalization.md)    
